@@ -1,8 +1,12 @@
-// todo - type - GetExpirationDateResponse
+import 'dart:typed_data';
 
-// todo - interface callback - GetExpirationDateCallback
-
+import '../common/index.dart';
 import 'bucket.dart';
+import 'signer.dart';
+
+typedef GetExpirationDateResponse = List<DateTime>;
+
+typedef GetExpirationDateCallback = void Function(Exception? err, DateTime? expirationDate, Metadata? apiResponse);
 
 abstract class PolicyDocument {
   late String string;
@@ -10,9 +14,9 @@ abstract class PolicyDocument {
   late String signature;
 }
 
-// todo - type - GetSignedPolicyResponse
+typedef GetSignedPolicyResponse = List<PolicyDocument>;
 
-// todo - interface callback - GetSignedPolicyCallback
+typedef GetSignedPolicyCallback = void Function(Exception? err, PolicyDocument? policy);
 
 abstract class GetSignedPolicyOptions {
 // todo - equals?: string[] | string[][];
@@ -24,11 +28,11 @@ abstract class GetSignedPolicyOptions {
 // todo - contentLengthRange?: {min?: number; max?: number};
 }
 
-// todo - type - GenerateSignedPostPolicyV2Options
+typedef GenerateSignedPostPolicyV2Options = GetSignedPolicyOptions;
 
-// todo - type - GenerateSignedPostPolicyV2Response
+typedef GenerateSignedPostPolicyV2Response = GetSignedPolicyResponse;
 
-// todo - type - GenerateSignedPostPolicyV2Callback
+typedef GenerateSignedPostPolicyV2Callback = GetSignedPolicyCallback;
 
 abstract class PolicyFields {
   // todo - map
@@ -43,9 +47,9 @@ abstract class GenerateSignedPostPolicyV4Options {
   PolicyFields? fields;
 }
 
-// todo - interface callback - GenerateSignedPostPolicyV4Callback
+typedef GenerateSignedPostPolicyV4Callback = void Function(Exception? err, SignedPostPolicyV4Output? output);
 
-// todo - type - GenerateSignedPostPolicyV4Response
+typedef GenerateSignedPostPolicyV4Response = List<SignedPostPolicyV4Output>;
 
 abstract class SignedPostPolicyV4Output {
   late String url;
@@ -73,55 +77,60 @@ abstract class GetFileMetadataOptions {
   String? userProject;
 }
 
-// todo - type - GetFileMetadataResponse
+typedef GetFileMetadataResponse = List<Metadata>;
 
-// todo - interface callback - GetFileMetadataCallback
+typedef GetFileMetadataCallback = void Function(Exception? err, Metadata? metadata, Metadata? apiResponse);
 
 //todo - import class
 // abstract class GetFileOptions extends GetConfig {
 // String? userProject;
 // }
 
-// todo - type - GetFileResponse
+typedef GetFileResponse = List<dynamic>; // [File, Metadata];
 
-// todo - interface callback - GetFileCallback
+typedef GetFileCallback = void Function(Exception? err, File? file, Metadata? apiResponse);
 
 abstract class FileExistsOptions {
   String? userProject;
 }
 
-// todo - type - FileExistsResponse
+typedef FileExistsResponse = List<bool>;
 
-// todo - interface callback - FileExistsCallback
+typedef FileExistsCallback = void Function(Exception? err, bool? exists);
 
 abstract class DeleteFileOptions {
   bool? ignoreNotFound;
   String? userProject;
 }
 
-// todo - type - DeleteFileResponse
+typedef DeleteFileResponse = List<Metadata>;
 
-// todo - interface callback - DeleteFileCallback
+typedef DeleteFileCallback = void Function(Exception? err, Metadata? apiResponse);
 
-// todo - type - PredefinedAcl
+typedef PredefinedAcl = String;
+/** | 'authenticatedRead'
+    | 'bucketOwnerFullControl'
+    | 'bucketOwnerRead'
+    | 'private'
+    | 'projectPrivate'
+    | 'publicRead';
+ */
 
 abstract class CreateResumableUploadOptions {
   String? configPath;
-
-// todo - Metadata? metadata;
+  Metadata? metadata;
   String? origin;
   int? offset;
-
-//todo predefinedAcl?: PredefinedAcl;
+  PredefinedAcl? predefinedAcl;
   bool? private;
   bool? public;
   String? uri;
   String? userProject;
 }
 
-// todo - type - CreateResumableUploadResponse
+typedef CreateResumableUploadResponse = List<String>;
 
-// todo - interface callback - CreateResumableUploadResponse
+typedef CreateResumableUploadCallback = void Function(Exception? err, String? uri);
 
 abstract class CreateWriteStreamOptions extends CreateResumableUploadOptions {
   String? contentType;
@@ -133,41 +142,48 @@ abstract class CreateWriteStreamOptions extends CreateResumableUploadOptions {
 }
 
 abstract class MakeFilePrivateOptions {
-//todo - Metadata?: metadata;
+  Metadata? metadata;
   bool? strict;
   String? userProject;
 }
 
-// todo - type - MakeFilePrivateResponse
+typedef MakeFilePrivateResponse = List<Metadata>;
+
 // todo - type - MakeFilePrivateCallback
+// typedef MakeFilePrivateCallback = MakeFilePrivateCallback;
 
-// todo - interface callback - IsPublicCallback
+typedef IsPublicCallback = void Function(Exception? err, bool? resp);
 
-// todo - type - IsPublicResponse
-// todo - type - MakeFilePublicResponse
+typedef IsPublicResponse = List<bool>;
 
-// todo - interface callback - MakeFilePublicCallback
+typedef MakeFilePublicResponse = List<Metadata>;
 
-// todo - type - MoveResponse
+typedef MakeFilePublicCallback = void Function(Exception? err, Metadata? apiResponse);
 
-// todo - interface callback - MoveCallback
+typedef MoveResponse = List<Metadata>;
+
+typedef MoveCallback = void Function(Exception? err, File? destinationFile, Metadata? apiResponse);
 
 abstract class MoveOptions {
   String? userProject;
 }
 
-// todo - type - RenameOptions
-// todo - type - RenameResponse
-// todo - type - RenameCallback
-// todo - type - RotateEncryptionKeyOptions
+typedef RenameOptions = MoveOptions;
+
+typedef RenameResponse = MoveResponse;
+
+typedef RenameCallback = MoveCallback;
+
+typedef RotateEncryptionKeyOptions = dynamic; // string | Buffer | EncryptionKeyOptions;
 
 abstract class EncryptionKeyOptions {
 //todo - encryptionKey?: string | Buffer;
   String? kmsKeyName;
 }
 
-// todo - type - RotateEncryptionKeyCallback
-// todo - type - RotateEncryptionKeyResponse
+typedef RotateEncryptionKeyCallback = CopyCallback;
+
+typedef RotateEncryptionKeyResponse = CopyResponse;
 
 enum ActionToHTTPMethod {
   // todo - add default values
@@ -183,7 +199,7 @@ class ResumableUploadError extends Error {
 
 const String STORAGE_POST_POLICY_BASE_URL = 'https://storage.googleapis.com';
 
-const String GS_URL_REGEXP = '/^gs:\/\/([a-z0-9_.-]+)\/(.+)\$/';
+const String _GS_URL_REGEXP = '/^gs:\/\/([a-z0-9_.-]+)\/(.+)\$/';
 
 abstract class FileOptions {
 //todo - encryptionKey?: string | Buffer;
@@ -198,20 +214,19 @@ abstract class CopyOptions {
   String? contentType;
   String? contentDisposition;
   String? destinationKmsKeyName;
-
-// Metadata? metadata;
+  Metadata? metadata;
   String? predefinedAcl;
   String? token;
   String? userProject;
 }
 
-// todo - type - CopyResponse
+typedef CopyResponse = List<dynamic>; // [File, Metadata];
 
-// todo - interface callback - CopyCallback
+typedef CopyCallback = void Function(Exception? err, File? file, Metadata? apiResponse);
 
-// todo - type - DownloadResponse
+typedef DownloadResponse = List<ByteBuffer>;
 
-// todo - interface callback - DownloadCallback
+typedef DownloadCallback = void Function(RequestError? err, ByteBuffer contents);
 
 //todo - import class
 // abstract class DownloadOptions extends CreateReadStreamOptions {
@@ -242,21 +257,20 @@ abstract class CreateReadStreamOptions {
 }
 
 abstract class SaveOptions extends CreateWriteStreamOptions {
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
   void onUploadProgress(dynamic progressEvent);
 }
 
-// todo - interface callback - SaveCallback
+typedef SaveCallback = void Function(Exception? err);
 
 abstract class SetFileMetadataOptions {
   String? userProject;
 }
 
-// todo - interface callback - SetFileMetadataCallback
+typedef SetFileMetadataCallback = void Function(Exception? err, Metadata? apiResponse);
 
-// todo - type - SetFileMetadataResponse
+typedef SetFileMetadataResponse = List<Metadata>;
 
-// todo - type - SetStorageClassResponse
+typedef SetStorageClassResponse = List<Metadata>;
 
 abstract class SetStorageClassOptions {
   String? userProject;
@@ -266,18 +280,18 @@ abstract class SetStorageClassRequest extends SetStorageClassOptions {
   String? storageClass;
 }
 
-// todo - interface callback - SetStorageClassCallback
+typedef SetStorageClassCallback = void Function(Exception? err, Metadata? apiResponse);
 
+// todo - check if it should be Error or Exception
 class RequestError extends Error {
   String? code;
-  List<Error>? errors;
+  List<Exception>? errors;
 }
 
 const SEVEN_DAYS = 7 * 24 * 60 * 60;
 
-// todo - extends ServiceObject
 //todo - finish class
-class File {
+class File extends ServiceObject {
   // Acl acl;
 
   Bucket bucket;
@@ -286,10 +300,9 @@ class File {
   String? kmsKeyName;
   String? userProject;
 
-  //todo - URLSigner? signer;
-  //todo - Metadata metadata;
+  URLSigner? signer;
+  Metadata metadata;
   String name;
-
   int? generation;
 
   //todo - parent!: Bucket;

@@ -1,14 +1,19 @@
+import '../common/index.dart';
+import 'bucket.dart';
+import 'hmacKey.dart';
+
 abstract class GetServiceAccountOptions {
   String? userProject;
 }
 
-// todo - type
 abstract class ServiceAccount {
   String? emailAddress;
 }
 
-// todo - interface callback
-abstract class GetServiceAccountCallback {}
+typedef GetServiceAccountResponse = List<dynamic>; // [ServiceAccount, Metadata];
+
+typedef GetServiceAccountCallback = void Function(
+    Exception? err, ServiceAccount? serviceAccount, Metadata? apiResponse);
 
 abstract class CreateBucketQuery {
   late String project;
@@ -19,10 +24,17 @@ abstract class CreateBucketQuery {
 abstract class StorageOptions {
   bool? autoRetry;
   int? maxRetries;
+
+  /**
+   * **This option is deprecated.**
+   * @todo Remove in next major release.
+   */
   Future<dynamic>? future;
 
-  // The API endpoint of the service used to make requests.
-  // Defaults to `storage.googleapis.com`.
+  /**
+   * The API endpoint of the service used to make requests.
+   * Defaults to `storage.googleapis.com`.
+   */
   String? apiEndpoint;
 }
 
@@ -51,7 +63,7 @@ abstract class CreateBucketRequest {
   bool? nearline;
   bool? regional;
   bool? requesterPays;
-  dynamic retentionPolicy;
+  Map<dynamic, dynamic>? retentionPolicy;
   bool? standard;
   String? storageClass;
   String? userProject;
@@ -59,15 +71,18 @@ abstract class CreateBucketRequest {
   Versioning? versioning;
 }
 
-// todo - type
+typedef CreateBucketResponse = List<dynamic>; // [Bucket, Metadata];
 
-// todo - interface callback
-abstract class BucketCallback {}
+typedef BucketCallback = void Function(Exception? err, Bucket? bucket, Metadata? apiResponse);
 
-// todo - type
+typedef GetBucketsResponse = List<dynamic>; // [Bucket[], {}, Metadata];
 
-// todo - interface callback
-abstract class GetBucketsCallback {}
+typedef GetBucketsCallback = void Function(
+  Exception? err,
+  List<Bucket>? buckets,
+  Map<dynamic, dynamic>? nextQuery,
+  Metadata? apiResponse,
+);
 
 abstract class GetBucketsRequest {
   String? prefix;
@@ -80,19 +95,23 @@ abstract class GetBucketsRequest {
 }
 
 abstract class HmacKeyResourceResponse {
-  // todo - class
-  //  metadata: HmacKeyMetadata;
+  late HmacKeyMetadata metadata;
   late String secret;
 }
 
-// todo - type - CreateHmacKeyResponse
+typedef CreateHmacKeyResponse = List<dynamic>; // [HmacKey, string, HmacKeyResourceResponse];
 
 abstract class CreateHmacKeyOptions {
   String? projectId;
   String? userProject;
 }
 
-// todo - interface callback - CreateHmacKeyCallback
+typedef CreateHmacKeyCallback = void Function(
+  Exception? err,
+  HmacKey? hmacKey,
+  String? secret,
+  HmacKeyResourceResponse? apiResponse,
+);
 
 abstract class GetHmacKeysOptions {
   String? projectId;
@@ -105,12 +124,18 @@ abstract class GetHmacKeysOptions {
   String? userProject;
 }
 
-// todo - interface callback
-abstract class GetHmacKeysCallback {}
+typedef GetHmacKeysCallback = void Function(
+  Exception? err,
+  List<HmacKey>? hmacKeys,
+  Map<dynamic, dynamic>? nextQuery,
+  Metadata? apiResponse,
+);
 
 // todo - type - GetHmacKeysResponse
+typedef GetHmacKeysResponse = List<List<HmacKey>>;
 
 const PROTOCOL_REGEX = '/^(\w*):\/\//';
 
 // todo - extend Service, add fields and methods
+// todo - finish class
 class Storage {}

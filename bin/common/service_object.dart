@@ -9,7 +9,7 @@ const Map<String, dynamic> requestDefaults = {
 
 typedef ResponseBody = dynamic;
 
-// todo - find dart stream
+// todo - find dart stream equivalent
 // Directly copy over Duplexify interfaces
 // abstract class DuplexifyOptions extends DuplexOptions {
 //   bool? autoDestroy;

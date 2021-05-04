@@ -16,7 +16,7 @@ abstract class FileI {
 }
 
 abstract class Query {
-// todo - map - key: string]: string;
+// todo - map - [key: string]: string;
 }
 
 abstract class GetSignedUrlConfigInternal {
@@ -70,11 +70,11 @@ abstract class SignerGetSignedUrlConfig {
   String? contentType;
 }
 
-// todo - type - SignerGetSignedUrlResponse
+typedef SignerGetSignedUrlResponse = String;
 
-// todo - type - GetSignedUrlResponse
+typedef GetSignedUrlResponse = List<SignerGetSignedUrlResponse>;
 
-// todo - callback - // todo - type - GetSignedUrlResponse
+typedef GetSignedUrlCallback = void Function(Exception? err, String? url);
 
 // todo - type - ValueOf
 
@@ -89,6 +89,7 @@ const int SEVEN_DAYS = 604800;
 
 const String _PATH_STYLED_HOST = 'https://storage.googleapis.com';
 
+// todo - finish class
 class URLSigner {
   AuthClient _authClient;
   BucketI _bucket;

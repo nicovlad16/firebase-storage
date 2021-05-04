@@ -1,3 +1,5 @@
+import '../common/index.dart';
+
 abstract class HmacKeyOptions {
   String? projectId;
 }
@@ -21,17 +23,15 @@ abstract class SetHmacKeyMetadataOptions {
 }
 
 abstract class SetHmacKeyMetadata {
-  // todo - var default
-  String? state; // : 'ACTIVE' | 'INACTIVE';
+  String? state; //  'ACTIVE' | 'INACTIVE'
   String? etag;
 }
 
-// todo - interface callback
-abstract class HmacKeyMetadataCallback {}
+typedef GetAclCallback = void Function(Exception? err, HmacKeyMetadata? metadata, Metadata? apiResponse);
 
-// todo - type - HmacKeyMetadataResponse
+typedef HmacKeyMetadataResponse = List<dynamic>; // [HmacKeyMetadata, Metadata]
 
-// todo - class extends ServiceObject
-class HmacKey {
+// todo - finish class
+class HmacKey extends ServiceObject {
   HmacKeyMetadata? metadata;
 }

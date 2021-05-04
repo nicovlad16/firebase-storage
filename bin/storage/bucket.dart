@@ -1,3 +1,10 @@
+import '../common/index.dart';
+import 'acl.dart';
+import 'channel.dart';
+import 'file.dart';
+import 'iam.dart';
+import 'notification.dart';
+
 abstract class SourceObject {
   late String name;
   int? generation;
@@ -16,8 +23,14 @@ abstract class BucketOptions {
   String? userProject;
 }
 
-// todo - type - GetFilesResponse
-// todo - interface callback - GetFilesResponse
+typedef GetFilesResponse = List<dynamic>; // [File[], {}, Metadata];
+
+typedef GetFilesCallback = void Function(
+  Exception? err,
+  List<File>? files,
+  Map<dynamic, dynamic>? nextQuery,
+  Metadata? apiResponse,
+);
 
 abstract class WatchAllOptions {
   String? delimiter;
@@ -40,7 +53,7 @@ abstract class LifecycleRule {
 }
 
 abstract class EnableLoggingOptions {
-// todo - bucket?: string | Bucket;
+  dynamic bucket; // string | Bucket
   late String prefix;
 }
 
@@ -66,9 +79,9 @@ abstract class CombineOptions {
   String? userProject;
 }
 
-// todo - interface callback - CombineCallback
+typedef CombineCallback = void Function(Exception? err, File? file, Metadata? apiResponse);
 
-// todo - type - CombineResponse
+typedef CombineResponse = List<dynamic>; // [File, Metadata];
 
 abstract class CreateChannelConfig extends WatchAllOptions {
   late String address;
@@ -78,9 +91,9 @@ abstract class CreateChannelOptions {
   String? userProject;
 }
 
-// todo - type - CreateChannelResponse
+typedef CreateChannelResponse = List<dynamic>; // [Channel, Metadata];
 
-// todo - interface callback - CreateChannelResponse
+typedef CreateChannelCallback = void Function(Exception? err, Channel? channel, Metadata? apiResponse);
 
 abstract class CreateNotificationOptions {
   Map<String, String>? customAttributes;
@@ -90,66 +103,70 @@ abstract class CreateNotificationOptions {
   String? userProject;
 }
 
-// todo - interface callback - CreateNotificationCallback
+typedef CreateNotificationCallback = void Function(Exception? err, Notification? notification, Metadata? apiResponse);
 
-// todo - type - CreateNotificationResponse
+typedef CreateNotificationResponse = List<dynamic>; // [Notification, Metadata];
 
 abstract class DeleteBucketOptions {
   bool? ignoreNotFound;
   String? userProject;
 }
 
-// todo - type - DeleteBucketResponse
+typedef DeleteBucketResponse = List<Metadata>;
 
-// todo - interface callback - DeleteBucketCallback
+typedef DeleteBucketCallback = void Function(Exception? err, Metadata? apiResponse);
 
 abstract class DeleteFilesOptions extends GetFilesOptions {
   bool? force;
 }
 
-// todo - interface callback - DeleteFilesCallback
+typedef DeleteFilesCallback = void Function(
+  dynamic err /* Error | Error[] | null */,
+  Map<dynamic, dynamic>? apiResponse,
+);
 
-// todo - type - DeleteLabelsResponse
+typedef DeleteLabelsResponse = List<Metadata>;
 
-// todo - interface callback - DeleteLabelsCallback
+typedef DeleteLabelsCallback = SetLabelsCallback;
 
-// todo - type - DisableRequesterPaysResponse
+typedef DisableRequesterPaysResponse = List<Metadata>;
 
-// todo - interface callback - DisableRequesterPaysCallback
+typedef DisableRequesterPaysCallback = void Function(Exception? err, Map<dynamic, dynamic>? apiResponse);
 
-// todo - type - EnableRequesterPaysResponse
+typedef EnableRequesterPaysResponse = List<Metadata>;
 
-// todo - interface callback - EnableRequesterPaysCallback
+typedef EnableRequesterPaysCallback = void Function(Exception? err, Metadata? apiResponse);
 
 // todo - import class
 // abstract class BucketExistsOptions extends GetConfig {
 // String? userProject;
 // }
 
-// todo - type - BucketExistsResponse
+typedef BucketExistsResponse = List<bool>;
 
 // todo - interface callback - BucketExistsCallback
+// typedef BucketExistsCallback = ExistsCallback;
 
 // todo - import class
 // abstract class GetBucketOptions extends GetConfig {
 // String? userProject;
 // }
 
-// todo - type - GetBucketResponse
+typedef GetBucketResponse = List<dynamic>; // [Bucket, Metadata];
 
-// todo - interface callback - GetBucketCallback
+typedef GetBucketCallback = void Function(Exception? err, Bucket? bucket, Metadata? apiResponse);
 
 abstract class GetLabelsOptions {
   String? userProject;
 }
 
-// todo - type - GetLabelsResponse
+typedef GetLabelsResponse = List<Metadata>;
 
-// todo - interface callback - GetLabelsCallback
+typedef GetLabelsCallback = void Function(Exception? err, Map<dynamic, dynamic>? labels);
 
-// todo - type - GetBucketMetadataResponse
+typedef GetBucketMetadataResponse = List<Metadata>;
 
-// todo - interface callback - GetBucketMetadataCallback
+typedef GetBucketMetadataCallback = void Function(Exception? err, Metadata? metadata, Metadata? apiResponse);
 
 abstract class GetBucketMetadataOptions {
   String? userProject;
@@ -174,14 +191,18 @@ abstract class GetNotificationsOptions {
   String? userProject;
 }
 
-// todo - interface callback - GetNotificationsCallback
+typedef GetNotificationsCallback = void Function(
+  Exception? err,
+  List<Notification>? notifications,
+  Metadata? apiResponse,
+);
 
-// todo - type - GetNotificationsResponse
+typedef GetNotificationsResponse = List<dynamic>; // [Notification[], Metadata];
 
 abstract class MakeBucketPrivateOptions {
   bool? includeFiles;
   bool? force;
-// todo - import metadata?: Metadata;
+  Metadata? metadata;
   String? userProject;
 }
 
@@ -189,30 +210,30 @@ abstract class MakeBucketPrivateRequest extends MakeBucketPrivateOptions {
   bool? private;
 }
 
-// todo - type - MakeBucketPrivateResponse
+typedef MakeBucketPrivateResponse = List<List<File>>;
 
-// todo - interface callback - MakeBucketPrivateResponse
+typedef MakeBucketPrivateCallback = void Function(Exception? err, List<File>? files);
 
 abstract class MakeBucketPublicOptions {
   bool? includeFiles;
   bool? force;
 }
 
-// todo - interface callback - MakeBucketPublicCallback
+typedef MakeBucketPublicCallback = void Function(Exception? err, List<File>? files);
 
-// todo - type - MakeBucketPublicResponse
+typedef MakeBucketPublicResponse = List<List<File>>;
 
 abstract class SetBucketMetadataOptions {
   String? userProject;
 }
 
-// todo - type - SetBucketMetadataResponse
+typedef SetBucketMetadataResponse = List<Metadata>;
 
-// todo - interface callback - SetBucketMetadataResponse
+typedef SetBucketMetadataCallback = void Function(Exception? err, Metadata? metadata);
 
-// todo - interface callback - BucketLockCallback
+typedef BucketLockCallback = void Function(Exception? err, Metadata? apiResponse);
 
-// todo - type - BucketLockResponse
+typedef BucketLockResponse = List<Metadata>;
 
 abstract class Labels {
 // todo - [key: string]: string;
@@ -222,19 +243,19 @@ abstract class SetLabelsOptions {
   String? userProject;
 }
 
-// todo - type - SetLabelsResponse
+typedef SetLabelsResponse = List<Metadata>;
 
-// todo - interface callback - SetLabelsCallback
+typedef SetLabelsCallback = void Function(Exception? err, Metadata? metadata);
 
 abstract class SetBucketStorageClassOptions {
   String? userProject;
 }
 
-// todo - type - SetBucketStorageClassCallback
+typedef SetBucketStorageClassCallback = void Function(Exception? err);
 
-// todo - interface callback - UploadResponse
+typedef UploadResponse = List<dynamic>; // [File, Metadata];
 
-// todo - interface callback - UploadCallback
+typedef UploadCallback = void Function(Exception? err, File? file, Metadata? apiResponse);
 
 // todo - import class
 // abstract class UploadOptions
@@ -256,24 +277,26 @@ abstract class MakeAllFilesPublicPrivateOptions {
   String? userProject;
 }
 
-// todo - interface callback - MakeAllFilesPublicPrivateCallback
+typedef MakeAllFilesPublicPrivateCallback = void Function(
+  dynamic err, // Error | Error[] | null
+  List<File>? files,
+);
 
-// todo - type - MakeAllFilesPublicPrivateResponse
+typedef MakeAllFilesPublicPrivateResponse = List<List<File>>;
 
-const RESUMABLE_THRESHOLD = 5000000;
+const _RESUMABLE_THRESHOLD = 5000000;
 
-// todo - extends ServiceObject
 // todo - finish class
-class Bucket {
+class Bucket extends ServiceObject {
   // Metadata metadata;
   // String name;
   // Storage storae;
   String? userProject;
 
-  // String getId() {
-  //   return '';
-  // }
+// String getId() {
+//   return '';
+// }
 
-  // Acl acl;
-  // Iam iam;
+  late Acl acl;
+  late Iam iam;
 }

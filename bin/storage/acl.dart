@@ -1,12 +1,18 @@
+import '../common/index.dart';
+
 abstract class AclOptions {
   late String pathPrefix;
 // todo - import from google cloud
 // void request(DecorateRequestOptions request, BodyResponseCallback callback)
 }
 
-// todo - type - GetAclResponse
+typedef GetAclResponse = List<dynamic /* AccessControlObject | AccessControlObject[], Metadata */ >;
 
-//todo - interface callback - GetAclResponse
+typedef GetAclCallback = void Function(
+  Exception? err,
+  dynamic acl /* AccessControlObject | AccessControlObject[] | null */,
+  Metadata? apiResponse,
+);
 
 abstract class GetAclOptions {
   late String entity;
@@ -21,9 +27,9 @@ abstract class UpdateAclOptions {
   String? userProject;
 }
 
-// todo - type - UpdateAclResponse
+typedef UpdateAclResponse = List<dynamic>; // [AccessControlObject, Metadata]
 
-// todo - interface callback - UpdateAclResponse
+typedef UpdateAclCallback = void Function(Exception? err, AccessControlObject? acl, Metadata? apiResponse);
 
 abstract class AddAclOptions {
   late String entity;
@@ -32,13 +38,13 @@ abstract class AddAclOptions {
   String? userProject;
 }
 
-// todo - type - AddAclResponse
+typedef AddAclResponse = List<dynamic>; // [AccessControlObject, Metadata]
 
-// todo - interface callback - AddAclResponse
+typedef AddAclCallback = void Function(Exception? err, AccessControlObject? acl, Metadata? apiResponse);
 
-//todo - type - RemoveAclResponse
+typedef RemoveAclResponse = List<Metadata>;
 
-//todo - interface callback - RemoveAclCallback
+typedef RemoveAclCallback = void Function(Exception? err, Metadata? apiResponse);
 
 abstract class RemoveAclOptions {
   late String entity;
@@ -57,6 +63,7 @@ abstract class AccessControlObject {
   late String projectTeam;
 }
 
+// todo - finish class
 class AclRoleAccessorMethods {
   static const List<String> _accessMethods = <String>['add', 'delete'];
 
@@ -80,7 +87,7 @@ class AclRoleAccessorMethods {
 
   Map<dynamic, dynamic> writers = {};
 
-  AclRoleAccessorMethods(this.owners, this.readers, this.writers);
+  AclRoleAccessorMethods({this.owners = const {}, this.readers = const {}, this.writers = const {}});
 
   // todo - bind methods
 
@@ -91,4 +98,9 @@ class AclRoleAccessorMethods {
 
     // todo - finish method
   }
+}
+
+// todo - finish class
+class Acl extends AclRoleAccessorMethods {
+  Acl() : super();
 }

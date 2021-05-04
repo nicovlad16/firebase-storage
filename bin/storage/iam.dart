@@ -1,17 +1,21 @@
+import '../common/index.dart';
+
 abstract class GetPolicyOptions {
   String? userProject;
   int? requestedPolicyVersion;
 }
 
-// todo - type - GetPolicyResponse
-// todo - callback - GetPolicyCallback
+typedef GetPolicyResponse = List<dynamic>; // [Policy, Metadata];
+
+typedef GetPolicyCallback = void Function(Exception? err, Policy? acl, Metadata? apiResponse);
 
 abstract class SetPolicyOptions {
   String? userProject;
 }
 
-// todo - type - SetPolicyResponse
-// todo - callback - SetPolicyCallback
+typedef SetPolicyResponse = List<dynamic>; // [Policy, Metadata];
+
+typedef SetPolicyCallback = void Function(Exception? err, Policy? acl, Map<dynamic, dynamic>? apiResponse);
 
 abstract class Policy {
   late List<PolicyBinding> bindings;
@@ -31,8 +35,9 @@ abstract class Expr {
   late String expression;
 }
 
-// todo - type - TestIamPermissionsResponse
-// todo - callback - TestIamPermissionsCallback
+typedef TestIamPermissionsResponse = List<dynamic>; // [Map<String, bool>, Metadata];
+
+typedef TestIamPermissionsCallback = void Function(Exception? err, Map<String, bool>? acl, Metadata? apiResponse);
 
 abstract class TestIamPermissionsOptions {
   String? userProject;
