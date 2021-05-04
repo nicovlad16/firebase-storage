@@ -1,8 +1,8 @@
-const Map<String, dynamic> requestDefaults = {
+const Map<String, dynamic> requestDefaults = <String, dynamic>{
   'timeout': 60000,
   'gzip': true,
   'forever': true,
-  'pool': {
+  'pool': <String, dynamic>{
     'maxSockets': 9223372036854775807,
   },
 };

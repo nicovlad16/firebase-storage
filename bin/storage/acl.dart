@@ -65,6 +65,12 @@ abstract class AccessControlObject {
 
 // todo - finish class
 class AclRoleAccessorMethods {
+  AclRoleAccessorMethods({
+    this.owners = const <dynamic, dynamic>{},
+    this.readers = const <dynamic, dynamic>{},
+    this.writers = const <dynamic, dynamic>{},
+  });
+
   static const List<String> _accessMethods = <String>['add', 'delete'];
 
   static const List<String> _entities = <String>[
@@ -81,20 +87,18 @@ class AclRoleAccessorMethods {
 
   static const List<String> _roles = <String>['OWNER', 'READER', 'WRITER'];
 
-  Map<dynamic, dynamic> owners = {};
+  Map<dynamic, dynamic> owners = <dynamic, dynamic>{};
 
-  Map<dynamic, dynamic> readers = {};
+  Map<dynamic, dynamic> readers = <dynamic, dynamic>{};
 
-  Map<dynamic, dynamic> writers = {};
-
-  AclRoleAccessorMethods({this.owners = const {}, this.readers = const {}, this.writers = const {}});
+  Map<dynamic, dynamic> writers = <dynamic, dynamic>{};
 
   // todo - bind methods
 
   void _assignAccessMethods(String role) {
-    var accessMethods = AclRoleAccessorMethods._accessMethods;
-    var entities = AclRoleAccessorMethods._entities;
-    var roleGroup = role.toLowerCase() + 's';
+    const List<String> accessMethods = AclRoleAccessorMethods._accessMethods;
+    const List<String> entities = AclRoleAccessorMethods._entities;
+    final String roleGroup = role.toLowerCase() + 's';
 
     // todo - finish method
   }

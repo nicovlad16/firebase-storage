@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../common/index.dart';
+import 'acl.dart';
 import 'bucket.dart';
 import 'signer.dart';
 
@@ -107,14 +108,8 @@ typedef DeleteFileResponse = List<Metadata>;
 
 typedef DeleteFileCallback = void Function(Exception? err, Metadata? apiResponse);
 
-typedef PredefinedAcl = String;
-/** | 'authenticatedRead'
-    | 'bucketOwnerFullControl'
-    | 'bucketOwnerRead'
-    | 'private'
-    | 'projectPrivate'
-    | 'publicRead';
- */
+typedef PredefinedAcl = String; // | 'authenticatedRead' | 'bucketOwnerFullControl' | 'bucketOwnerRead'
+// | 'private' | 'projectPrivate' | 'publicRead';
 
 abstract class CreateResumableUploadOptions {
   String? configPath;
@@ -288,11 +283,13 @@ class RequestError extends Error {
   List<Exception>? errors;
 }
 
-const SEVEN_DAYS = 7 * 24 * 60 * 60;
+const int SEVEN_DAYS = 7 * 24 * 60 * 60;
 
 //todo - finish class
 class File extends ServiceObject {
-  // Acl acl;
+  File(this.bucket, this.name, FileOptions options);
+
+  late Acl acl;
 
   Bucket bucket;
 
@@ -312,6 +309,4 @@ class File extends ServiceObject {
   String? encryptionKeyHash;
 
   // todo - Interceptor? _encryptionKeyInterceptor;
-
-  File(this.bucket, this.name, FileOptions options);
 }

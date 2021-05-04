@@ -15,14 +15,10 @@ typedef GetNotificationMetadataCallback = void Function(Exception? err, Response
 typedef GetNotificationResponse = List<dynamic>; // [Notification, Metadata];
 
 abstract class GetNotificationOptions {
-  /**
-   * Automatically create the object if it does not exist. Default: `false`.
-   */
+  /// Automatically create the object if it does not exist. Default: `false`.
   bool? autoCreate;
 
-  /**
-   * The ID of the project which will be billed for the request.
-   */
+  ///  The ID of the project which will be billed for the request.
   String? userProject;
 }
 

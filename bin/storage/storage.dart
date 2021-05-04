@@ -13,7 +13,10 @@ abstract class ServiceAccount {
 typedef GetServiceAccountResponse = List<dynamic>; // [ServiceAccount, Metadata];
 
 typedef GetServiceAccountCallback = void Function(
-    Exception? err, ServiceAccount? serviceAccount, Metadata? apiResponse);
+  Exception? err,
+  ServiceAccount? serviceAccount,
+  Metadata? apiResponse,
+);
 
 abstract class CreateBucketQuery {
   late String project;
@@ -25,16 +28,13 @@ abstract class StorageOptions {
   bool? autoRetry;
   int? maxRetries;
 
-  /**
-   * **This option is deprecated.**
-   * @todo Remove in next major release.
-   */
+  ///  **This option is deprecated.**
+  ///  @todo Remove in next major release.
   Future<dynamic>? future;
 
-  /**
-   * The API endpoint of the service used to make requests.
-   * Defaults to `storage.googleapis.com`.
-   */
+  ///  The API endpoint of the service used to make requests.
+  ///  Defaults to `storage.googleapis.com`.
+
   String? apiEndpoint;
 }
 
@@ -134,7 +134,7 @@ typedef GetHmacKeysCallback = void Function(
 // todo - type - GetHmacKeysResponse
 typedef GetHmacKeysResponse = List<List<HmacKey>>;
 
-const PROTOCOL_REGEX = '/^(\w*):\/\//';
+const String PROTOCOL_REGEX = '/^(\w*):\/\//';
 
 // todo - extend Service, add fields and methods
 // todo - finish class

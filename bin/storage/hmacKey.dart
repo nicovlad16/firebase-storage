@@ -16,9 +16,7 @@ abstract class HmacKeyMetadata {
 }
 
 abstract class SetHmacKeyMetadataOptions {
-  /**
-   * This parameter is currently ignored.
-   */
+  /// This parameter is currently ignored.
   String? userProject;
 }
 

@@ -61,7 +61,7 @@ abstract class GetFilesOptions {
   bool? autoPaginate;
   String? delimiter;
 
-  /** @deprecated */
+  /// @deprecated
   String? directory;
   String? endOffset;
   bool? includeTrailingDelimiter;
@@ -284,7 +284,7 @@ typedef MakeAllFilesPublicPrivateCallback = void Function(
 
 typedef MakeAllFilesPublicPrivateResponse = List<List<File>>;
 
-const _RESUMABLE_THRESHOLD = 5000000;
+const int _RESUMABLE_THRESHOLD = 5000000;
 
 // todo - finish class
 class Bucket extends ServiceObject {

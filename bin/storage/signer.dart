@@ -91,11 +91,11 @@ const String _PATH_STYLED_HOST = 'https://storage.googleapis.com';
 
 // todo - finish class
 class URLSigner {
+  URLSigner(this._authClient, this._bucket, this._fileI);
+
   AuthClient _authClient;
   BucketI _bucket;
   FileI? _fileI;
-
-  URLSigner(this._authClient, this._bucket, this._fileI);
 }
 
 class SigningError extends Error {
