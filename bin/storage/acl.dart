@@ -1,16 +1,18 @@
 import '../common/index.dart';
 
+typedef AclRequestCallback = Function(DecorateRequestOptions reqOpts, BodyResponseCallback callback);
+
 abstract class AclOptions {
   late String pathPrefix;
-// todo - import from google cloud
-// void request(DecorateRequestOptions request, BodyResponseCallback callback)
+
+  late AclRequestCallback request;
 }
 
-typedef GetAclResponse = List<dynamic /* AccessControlObject | AccessControlObject[], Metadata */ >;
+typedef GetAclResponse = List<dynamic>; // [AccessControlObject | AccessControlObject[], Metadata]
 
 typedef GetAclCallback = void Function(
   Exception? err,
-  dynamic acl /* AccessControlObject | AccessControlObject[] | null */,
+  dynamic acl, // AccessControlObject | AccessControlObject[] | null
   Metadata? apiResponse,
 );
 
@@ -42,7 +44,7 @@ typedef AddAclResponse = List<dynamic>; // [AccessControlObject, Metadata]
 
 typedef AddAclCallback = void Function(Exception? err, AccessControlObject? acl, Metadata? apiResponse);
 
-typedef RemoveAclResponse = List<Metadata>;
+typedef RemoveAclResponse = List<Metadata>; // [Metadata];
 
 typedef RemoveAclCallback = void Function(Exception? err, Metadata? apiResponse);
 
@@ -55,6 +57,7 @@ abstract class RemoveAclOptions {
 abstract class AclQuery {
   late int generation;
   late String userProject;
+  Map<String, dynamic> values = <String, dynamic>{};
 }
 
 abstract class AccessControlObject {
@@ -66,10 +69,16 @@ abstract class AccessControlObject {
 // todo - finish class
 class AclRoleAccessorMethods {
   AclRoleAccessorMethods({
-    this.owners = const <dynamic, dynamic>{},
-    this.readers = const <dynamic, dynamic>{},
-    this.writers = const <dynamic, dynamic>{},
-  });
+    Map<dynamic, dynamic>? owners,
+    Map<dynamic, dynamic>? readers,
+    Map<dynamic, dynamic>? writers,
+  }) {
+    this.owners = owners ?? <dynamic, dynamic>{};
+    this.readers = owners ?? <dynamic, dynamic>{};
+    this.writers = owners ?? <dynamic, dynamic>{};
+
+    _roles.forEach(_assignAccessMethods);
+  }
 
   static const List<String> _accessMethods = <String>['add', 'delete'];
 
@@ -93,18 +102,56 @@ class AclRoleAccessorMethods {
 
   Map<dynamic, dynamic> writers = <dynamic, dynamic>{};
 
-  // todo - bind methods
-
   void _assignAccessMethods(String role) {
     const List<String> accessMethods = AclRoleAccessorMethods._accessMethods;
     const List<String> entities = AclRoleAccessorMethods._entities;
-    final String roleGroup = role.toLowerCase() + 's';
+    String roleGroup = role.toLowerCase() + 's';
 
-    // todo - finish method
+    roleGroup = entities.reduce((String acc, final String entity) {
+      final bool isPrefix = entity.endsWith('-');
+
+      for (final String accessMethod in accessMethods) {
+        String method = accessMethod + entity[0].toUpperCase() + entity.substring(1);
+
+        if (isPrefix) {
+          method = method.replaceAll('-', '');
+        }
+      }
+
+      // todo - finish method
+
+      return acc;
+    });
   }
 }
 
 // todo - finish class
 class Acl extends AclRoleAccessorMethods {
-  Acl() : super();
+  Acl(AclOptions options) {
+    // todo - call super
+    pathPrefix = options.pathPrefix;
+    request_ = options.request;
+  }
+
+  late String pathPrefix;
+
+  // ignore: non_constant_identifier_names
+  late AclRequestCallback request_;
+
+  // todo - finish method
+  Future<dynamic /* void | Future<AddAclResponse>*/ > add(AddAclOptions options, AddAclCallback callback) async {
+    AclQuery? query;
+
+    if (options.generation != null) {
+      query?.values['generation'] = options.generation;
+    }
+
+    if (options.userProject != null) {
+      query?.values['userProject'] = options.userProject;
+    }
+
+    // todo - request
+
+    return;
+  }
 }

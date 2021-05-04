@@ -1,9 +1,8 @@
 import '../common/index.dart';
-import 'acl.dart';
 import 'channel.dart';
 import 'file.dart';
-import 'iam.dart';
 import 'notification.dart';
+import 'signer.dart';
 
 abstract class SourceObject {
   late String name;
@@ -47,8 +46,8 @@ abstract class AddLifecycleRuleOptions {
 }
 
 abstract class LifecycleRule {
-// todo - action: {type: string; storageClass?: string} | string;
-// todo - condition: {[key: string]: boolean | Date | number | string};
+  dynamic action; // {type: string; storageClass?: string} | string;
+  dynamic condition; // {[key: string]: boolean | Date | number | string};
   String? storageClass;
 }
 
@@ -137,20 +136,17 @@ typedef EnableRequesterPaysResponse = List<Metadata>;
 
 typedef EnableRequesterPaysCallback = void Function(Exception? err, Metadata? apiResponse);
 
-// todo - import class
-// abstract class BucketExistsOptions extends GetConfig {
-// String? userProject;
-// }
+abstract class BucketExistsOptions extends GetConfig {
+  String? userProject;
+}
 
 typedef BucketExistsResponse = List<bool>;
 
-// todo - interface callback - BucketExistsCallback
-// typedef BucketExistsCallback = ExistsCallback;
+typedef BucketExistsCallback = ExistsCallback;
 
-// todo - import class
-// abstract class GetBucketOptions extends GetConfig {
-// String? userProject;
-// }
+abstract class GetBucketOptions extends GetConfig {
+  String? userProject;
+}
 
 typedef GetBucketResponse = List<dynamic>; // [Bucket, Metadata];
 
@@ -174,12 +170,12 @@ abstract class GetBucketMetadataOptions {
 
 abstract class GetBucketSignedUrlConfig {
   String action = 'list';
-  String? version; // todo - : 'v2' | 'v4';
+  String? version; // 'v2' | 'v4';
   String? cname;
   bool? virtualHostedStyle;
-// todo - expires: string | number | Date;
+  dynamic expires; // string | number | Date;
 // todo - extensionHeaders?: http.OutgoingHttpHeaders;
-// todo - queryParams?: Query;
+  Query? queryParams;
 }
 
 enum BucketActionToHTTPMethod {
@@ -257,18 +253,15 @@ typedef UploadResponse = List<dynamic>; // [File, Metadata];
 
 typedef UploadCallback = void Function(Exception? err, File? file, Metadata? apiResponse);
 
-// todo - import class
-// abstract class UploadOptions
-// extends CreateResumableUploadOptions,
-// CreateWriteStreamOptions {
-// // todo - destination?: string | File;
-// // todo - encryptionKey?: string | Buffer;
-// String? kmsKeyName;
-// String? resumable;
-// int? timeout;
-// // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// // todo - onUploadProgress?: (progressEvent: any) => void;
-// }
+abstract class UploadOptionsBase extends CreateResumableUploadOptions {}
+
+abstract class UploadOptions extends CreateWriteStreamOptions {
+  dynamic destination; // string | File;
+  dynamic encryptionKey; // string | Buffer;
+  String? kmsKeyName;
+
+  void onUploadProgress(dynamic progressEvent);
+}
 
 abstract class MakeAllFilesPublicPrivateOptions {
   bool? force;
@@ -288,15 +281,45 @@ const int _RESUMABLE_THRESHOLD = 5000000;
 
 // todo - finish class
 class Bucket extends ServiceObject {
-  // Metadata metadata;
+  // Bucket(Storage storage, String name, BucketOptions? options) {
+  //   // todo - options
+  //
+  //   // Allow for "gs://"-style input, and strip any trailing slashes.
+  //   name = name.replaceAll('/^gs:\/\//', '').replaceAll('/\/+\$/', '');
+  //
+  //   final Map<dynamic, dynamic> requestQueryObject = <dynamic, dynamic>{};
+  //
+  //   userProject = options!.userProject;
+  //   if (userProject.runtimeType == String) {
+  //     requestQueryObject['userProject'] = userProject;
+  //   }
+  //
+  //   this.storage = storage;
+  //   this.name = name;
+  //   this.userProject = userProject;
+  // }
+
+  Metadata metadata;
   // String name;
-  // Storage storae;
+
+  /// A reference to the {@link Storage} associated with this {@link Bucket}
+  /// instance.
+  /// @name Bucket#storage
+  /// @type {Storage}
+  // Storage storage;
+
+  /// A user project to apply to each request from this bucket.
+  /// @name Bucket#userProject
+  /// @type {string}
   String? userProject;
+
+  // Acl acl;
+  // Iam iam;
+  //
+  // Function getFilesStream;
+  // URLSigner signer;
 
 // String getId() {
 //   return '';
 // }
-
-  late Acl acl;
-  late Iam iam;
 }

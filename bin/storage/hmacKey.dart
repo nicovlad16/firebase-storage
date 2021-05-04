@@ -1,4 +1,5 @@
 import '../common/index.dart';
+import 'storage.dart';
 
 abstract class HmacKeyOptions {
   String? projectId;
@@ -31,5 +32,8 @@ typedef HmacKeyMetadataResponse = List<dynamic>; // [HmacKeyMetadata, Metadata]
 
 // todo - finish class
 class HmacKey extends ServiceObject {
+  HmacKey(Storage storage, String accessId, HmacKeyOptions? options) {
+    // todo - finish constructor
+  }
   HmacKeyMetadata? metadata;
 }

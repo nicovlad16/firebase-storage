@@ -23,8 +23,7 @@ abstract class CreateBucketQuery {
   late String userProject;
 }
 
-// todo - interface implements - import from cloud package
-abstract class StorageOptions {
+abstract class StorageOptions extends ServiceOptions {
   bool? autoRetry;
   int? maxRetries;
 
@@ -131,11 +130,9 @@ typedef GetHmacKeysCallback = void Function(
   Metadata? apiResponse,
 );
 
-// todo - type - GetHmacKeysResponse
 typedef GetHmacKeysResponse = List<List<HmacKey>>;
 
 const String PROTOCOL_REGEX = '/^(\w*):\/\//';
 
-// todo - extend Service, add fields and methods
 // todo - finish class
-class Storage {}
+class Storage extends Service {}

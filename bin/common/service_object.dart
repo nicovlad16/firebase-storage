@@ -16,12 +16,15 @@ typedef ResponseBody = dynamic;
 //   bool? end;
 // }
 
-// todo - class Duplexify
-
-//todo - DuplexifyConstructor
-
 abstract class ParsedHttpRespMessage {
 // todo - fields
+}
+
+typedef ExistsCallback = void Function(Exception? err, bool? exists);
+
+abstract class GetConfig {
+  /// Create the object if it doesn't already exist.
+  bool? autoCreate;
 }
 
 typedef Metadata = dynamic;

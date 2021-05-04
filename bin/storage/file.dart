@@ -20,13 +20,13 @@ typedef GetSignedPolicyResponse = List<PolicyDocument>;
 typedef GetSignedPolicyCallback = void Function(Exception? err, PolicyDocument? policy);
 
 abstract class GetSignedPolicyOptions {
-// todo - equals?: string[] | string[][];
-// todo - expires: string | number | Date;
-// todo - startsWith?: string[] | string[][];
+  dynamic equals; // string[] | string[][];
+  dynamic expires; // string | number | Date;
+  dynamic startsWith; // string[] | string[][];
   String? acl;
   String? successRedirect;
   String? successStatus;
-// todo - contentLengthRange?: {min?: number; max?: number};
+  Map<String, int>? contentLengthRange; // {min?: number; max?: number};
 }
 
 typedef GenerateSignedPostPolicyV2Options = GetSignedPolicyOptions;
@@ -40,11 +40,10 @@ abstract class PolicyFields {
 }
 
 abstract class GenerateSignedPostPolicyV4Options {
-// todo - expires: string | number | Date;
+  dynamic expires; // string | number | Date;
   String? bucketBoundHostname;
   bool? virtualHostedStyle;
-
-//todo - conditions?: object[];
+  List<Map<dynamic, dynamic>>? conditions; // object[]
   PolicyFields? fields;
 }
 
@@ -58,20 +57,19 @@ abstract class SignedPostPolicyV4Output {
 }
 
 abstract class GetSignedUrlConfig {
-// todo - late String action: 'read' | 'write' | 'delete' | 'resumable';
-//todo - version?: 'v2' | 'v4';
+  late String action; // 'read' | 'write' | 'delete' | 'resumable';
+  String? version; // 'v2' | 'v4';
   bool? virtualHostedStyle;
   String? cname;
   String? contentMd5;
   String? contentType;
-
-//todo - expires: string | number | Date;
-//todo - accessibleAt?: string | number | Date;
+  dynamic expires; // string | number | Date;
+  dynamic accessibleAt; // string | number | Date;
 //todo - extensionHeaders?: http.OutgoingHttpHeaders;
   String? promptSaveAs;
   String? responseDisposition;
   String? responseType;
-//todo - queryParams?: Query;
+  Query? queryParams;
 }
 
 abstract class GetFileMetadataOptions {
@@ -82,10 +80,9 @@ typedef GetFileMetadataResponse = List<Metadata>;
 
 typedef GetFileMetadataCallback = void Function(Exception? err, Metadata? metadata, Metadata? apiResponse);
 
-//todo - import class
-// abstract class GetFileOptions extends GetConfig {
-// String? userProject;
-// }
+abstract class GetFileOptions extends GetConfig {
+  String? userProject;
+}
 
 typedef GetFileResponse = List<dynamic>; // [File, Metadata];
 
@@ -108,8 +105,8 @@ typedef DeleteFileResponse = List<Metadata>;
 
 typedef DeleteFileCallback = void Function(Exception? err, Metadata? apiResponse);
 
-typedef PredefinedAcl = String; // | 'authenticatedRead' | 'bucketOwnerFullControl' | 'bucketOwnerRead'
-// | 'private' | 'projectPrivate' | 'publicRead';
+typedef PredefinedAcl = String;
+// | 'authenticatedRead' | 'bucketOwnerFullControl' | 'bucketOwnerRead' | 'private' | 'projectPrivate' | 'publicRead';
 
 abstract class CreateResumableUploadOptions {
   String? configPath;
@@ -129,11 +126,10 @@ typedef CreateResumableUploadCallback = void Function(Exception? err, String? ur
 
 abstract class CreateWriteStreamOptions extends CreateResumableUploadOptions {
   String? contentType;
-
-// todo - gzip?: string | boolean;
+  dynamic gzip; // string | boolean;
   bool? resumable;
   int? timeout;
-//todo - validation?: string | boolean;
+  dynamic validation; // string | boolean;
 }
 
 abstract class MakeFilePrivateOptions {
@@ -144,8 +140,7 @@ abstract class MakeFilePrivateOptions {
 
 typedef MakeFilePrivateResponse = List<Metadata>;
 
-// todo - type - MakeFilePrivateCallback
-// typedef MakeFilePrivateCallback = MakeFilePrivateCallback;
+typedef MakeFilePrivateCallback = SetFileMetadataCallback;
 
 typedef IsPublicCallback = void Function(Exception? err, bool? resp);
 
@@ -172,7 +167,7 @@ typedef RenameCallback = MoveCallback;
 typedef RotateEncryptionKeyOptions = dynamic; // string | Buffer | EncryptionKeyOptions;
 
 abstract class EncryptionKeyOptions {
-//todo - encryptionKey?: string | Buffer;
+  dynamic encryptionKey; // string | Buffer;
   String? kmsKeyName;
 }
 
@@ -197,8 +192,8 @@ const String STORAGE_POST_POLICY_BASE_URL = 'https://storage.googleapis.com';
 const String _GS_URL_REGEXP = '/^gs:\/\/([a-z0-9_.-]+)\/(.+)\$/';
 
 abstract class FileOptions {
-//todo - encryptionKey?: string | Buffer;
-// todo - generation?: number | string;
+  dynamic encryptionKey; // string | Buffer;
+  dynamic generation; // number | string;
   String? kmsKeyName;
   String? userProject;
 }
@@ -223,10 +218,9 @@ typedef DownloadResponse = List<ByteBuffer>;
 
 typedef DownloadCallback = void Function(RequestError? err, ByteBuffer contents);
 
-//todo - import class
-// abstract class DownloadOptions extends CreateReadStreamOptions {
-// String? destination;
-// }
+abstract class DownloadOptions extends CreateReadStreamOptions {
+  String? destination;
+}
 
 abstract class CopyQuery {
   String? sourceGeneration;
@@ -244,8 +238,7 @@ abstract class FileQuery {
 
 abstract class CreateReadStreamOptions {
   String? userProject;
-
-// todo - validation?: 'md5' | 'crc32c' | false | true;
+  dynamic validation; // 'md5' | 'crc32c' | false | true;
   int? start;
   int? end;
   bool? decompress;
@@ -280,14 +273,35 @@ typedef SetStorageClassCallback = void Function(Exception? err, Metadata? apiRes
 // todo - check if it should be Error or Exception
 class RequestError extends Error {
   String? code;
-  List<Exception>? errors;
+  List<Error>? errors;
 }
 
 const int SEVEN_DAYS = 7 * 24 * 60 * 60;
 
 //todo - finish class
 class File extends ServiceObject {
-  File(this.bucket, this.name, FileOptions options);
+  File(this.bucket, this.name, FileOptions options) {
+    // todo - finish constructor
+    final Map<dynamic, dynamic> requestQueryObject = <dynamic, dynamic>{};
+    int? generation;
+
+    if (generation != null) {
+      if (options.generation.runtimeType == String) {
+        generation = int.tryParse(options.generation);
+      } else {
+        generation = options.generation;
+      }
+      if (!generation!.isNaN) {
+        requestQueryObject['generation'] = generation;
+      }
+    }
+
+    kmsKeyName = options.kmsKeyName;
+
+    if (options.encryptionKey != null) {
+      _encryptionKey = options.encryptionKey;
+    }
+  }
 
   late Acl acl;
 
@@ -304,9 +318,9 @@ class File extends ServiceObject {
 
   //todo - parent!: Bucket;
 
-  // todo - _encryptionKey?: string | Buffer;
-  String? encryptionKeyBase64;
-  String? encryptionKeyHash;
+  dynamic _encryptionKey; // string | Buffer;
+  String? _encryptionKeyBase64;
+  String? _encryptionKeyHash;
 
-  // todo - Interceptor? _encryptionKeyInterceptor;
+// todo - Interceptor? _encryptionKeyInterceptor;
 }

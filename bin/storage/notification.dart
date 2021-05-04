@@ -1,4 +1,5 @@
 import '../common/index.dart';
+import 'bucket.dart';
 
 abstract class DeleteNotificationOptions {
   String? userProject;
@@ -27,4 +28,6 @@ typedef GetNotificationCallback = void Function(Exception? err, Notification? no
 typedef DeleteNotificationCallback = void Function(Exception? err, Metadata? apiResponse);
 
 // todo - finish class
-class Notification extends ServiceObject {}
+class Notification extends ServiceObject {
+  Notification(Bucket bucket, String id) {}
+}
