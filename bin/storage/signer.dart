@@ -1,7 +1,7 @@
 import '../common/index.dart';
 
 class GetCredentialsResponse {
-  GetCredentialsResponse(this.client_email);
+  GetCredentialsResponse([this.client_email]);
 
   // ignore: non_constant_identifier_names
   final String? client_email;
@@ -67,9 +67,11 @@ class SignedUrlQuery {
 }
 
 class V2SignedUrlQuery extends SignedUrlQuery {
-  late String GoogleAccessId;
-  late int Expires;
-  late String Signature;
+  V2SignedUrlQuery({required this.GoogleAccessId, required this.Expires, required this.Signature});
+
+  String GoogleAccessId;
+  int Expires;
+  String Signature;
 }
 
 class V4SignedUrlQuery extends V4UrlQuery {
@@ -128,7 +130,7 @@ const String DEFAULT_SIGNING_VERSION = 'v2';
 
 const int SEVEN_DAYS = 604800;
 
-const String _PATH_STYLED_HOST = 'https://storage.googleapis.com';
+const String PATH_STYLED_HOST = 'https://storage.googleapis.com';
 
 // todo - finish class
 class URLSigner {
@@ -177,9 +179,9 @@ class URLSigner {
     SignedUrlQuery signedUrlQuery;
 
     if (version == 'v2') {
-      signedUrlQuery = await getSignedUrlV2(config);
+      signedUrlQuery = await _getSignedUrlV2(config);
     } else if (version == 'v4') {
-      signedUrlQuery = await getSignedUrlV4(config);
+      signedUrlQuery = await _getSignedUrlV4(config);
     } else {
       throw Exception('Invalid signed URL version: $version. Supported versions are \'v2\' and \'v4\'.');
     }
@@ -189,21 +191,55 @@ class URLSigner {
       query.values = cfg.queryParams!.values;
     }
     // todo - url in dart
+    final String signedUrl = PATH_STYLED_HOST;
+    final String pathname = getResourcePath(config.cname != null, _bucket.name, config.file);
 
     // todo - finish method
 
-    const SignerGetSignedUrlResponse signedUrlResponse = '';
-    return signedUrlResponse;
+    return signedUrl;
   }
 
-  Future<SignedUrlQuery> getSignedUrlV2(GetSignedUrlConfigInternal config) async {
+  Future<SignedUrlQuery> _getSignedUrlV2(GetSignedUrlConfigInternal config) async {
+    final dynamic canonicalHeadersString = getCanonicalHeaders();
+
+    final String resourcePath = getResourcePath(false, config.bucket, config.file);
+
+    final String blobToSign = <String>[
+      config.method,
+      config.contentMd5 ?? '',
+      config.contentType ?? '',
+      config.expiration.toString(),
+      canonicalHeadersString + resourcePath,
+    ].join('\n');
+
+    final Future<V2SignedUrlQuery> Function() sign = () async {
+      final AuthClient authClient = _authClient;
+      try {
+        final String signature = await authClient.sign(blobToSign);
+        final GetCredentialsResponse credentials = await authClient.getCredentials();
+
+        return V2SignedUrlQuery(
+          GoogleAccessId: credentials.client_email!,
+          Expires: config.expiration,
+          Signature: signature,
+        );
+      } catch (err, stackTrace) {
+        final SigningError signingErr = SigningError(err.toString(), stackTrace);
+        throw signingErr;
+      }
+    };
+
+    // todo - finish method
+    return sign();
+  }
+
+  Future<SignedUrlQuery> _getSignedUrlV4(GetSignedUrlConfigInternal config) async {
     // todo - method
     return SignedUrlQuery();
   }
 
-  Future<SignedUrlQuery> getSignedUrlV4(GetSignedUrlConfigInternal config) async {
+  dynamic getCanonicalHeaders() {
     // todo - method
-    return SignedUrlQuery();
   }
 
   String getCanonicalRequest(
@@ -248,6 +284,10 @@ class URLSigner {
   }
 }
 
-class SigningError extends Error {
+class SigningError implements Exception {
+  SigningError(this.message, [this.stackTrace]);
+
+  final String message;
+  final StackTrace? stackTrace;
   String name = 'SigningError';
 }
