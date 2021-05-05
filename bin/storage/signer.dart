@@ -1,3 +1,5 @@
+import '../common/index.dart';
+
 abstract class GetCredentialsResponse {
   String? client_email;
 }
@@ -17,20 +19,23 @@ abstract class FileI {
 }
 
 abstract class Query {
-// todo - map - [key: string]: string;
+  Map<dynamic, dynamic> values = <dynamic, dynamic>{};
 }
 
-abstract class GetSignedUrlConfigInternal {
-  late int expiration;
+class GetSignedUrlConfigInternal {
+  GetSignedUrlConfigInternal(this.expiration, this.method, this.bucket,
+      {this.accessibleAt, this.queryParams, this.cname, this.contentMd5, this.contentType, this.file});
+
+  int expiration;
   DateTime? accessibleAt;
-  late String method;
+  String method;
 
 // todo - extensionHeaders?: http.OutgoingHttpHeaders;
   Query? queryParams;
   String? cname;
   String? contentMd5;
   String? contentType;
-  late String bucket;
+  String bucket;
   String? file;
 }
 
@@ -60,12 +65,11 @@ abstract class V4UrlQuery extends SignedUrlQuery {
 }
 
 abstract class SignerGetSignedUrlConfig {
-// todo - method: 'GET' | 'PUT' | 'DELETE' | 'POST';
-// todo - expires: string | number | Date;
-// todo - accessibleAt?: string | number | Date;
+  late String method; // 'GET' | 'PUT' | 'DELETE' | 'POST';
+  late dynamic expires; // string | number | Date;
+  late dynamic accessibleAt; // string | number | Date;
   bool? virtualHostedStyle;
-
-// todo - version?: 'v2' | 'v4';
+  String? version; // 'v2' | 'v4';
   String? cname;
 
 //todo - extensionHeaders?: http.OutgoingHttpHeaders;
@@ -95,11 +99,52 @@ const String _PATH_STYLED_HOST = 'https://storage.googleapis.com';
 
 // todo - finish class
 class URLSigner {
-  URLSigner(this._authClient, this._bucket, this._fileI);
+  URLSigner(this._authClient, this._bucket, this._file);
 
   AuthClient _authClient;
   BucketI _bucket;
-  FileI? _fileI;
+  FileI? _file;
+
+  Future<SignerGetSignedUrlResponse> getSignedUrl(SignerGetSignedUrlConfig cfg) async {
+    final int expiresInSeconds = parseExpires(cfg.expires);
+    final String method = cfg.method;
+    final int accessibleAtInSeconds = parseAccessibleAt(cfg.accessibleAt);
+
+    if (expiresInSeconds < accessibleAtInSeconds) {
+      throw Exception('An expiration date cannot be before accessible date.');
+    }
+
+    String? customHost;
+    // Default style is `path`.
+    final bool isVirtualHostedStyle = cfg.virtualHostedStyle ?? false;
+
+    if (cfg.cname != null) {
+      customHost = cfg.cname;
+    } else if (isVirtualHostedStyle) {
+      customHost = 'https://${_bucket.name}.storage.googleapis.com';
+    }
+
+    const int secondsToMilliseconds = 1000;
+
+    final GetSignedUrlConfigInternal config = GetSignedUrlConfigInternal(
+      expiresInSeconds,
+      method,
+      _bucket.name,
+      accessibleAt: null, // todo - add value
+      file: _file != null ? encodeURI(_file!.name, false) : null,
+    );
+
+    if (customHost != null) {
+      config.cname = customHost;
+    }
+
+    final String version = cfg.version ?? DEFAULT_SIGNING_VERSION;
+
+    // todo - finish method
+
+    const SignerGetSignedUrlResponse signedUrlResponse = '';
+    return signedUrlResponse;
+  }
 
   String getCanonicalRequest(
       String method, String path, String query, String headers, String signedHeaders, String? contentSha256) {
@@ -120,7 +165,7 @@ class URLSigner {
     }
   }
 
-  int parseExpires(dynamic expires /* string | number | Date */, DateTime? current) {
+  int parseExpires(dynamic expires /* string | number | Date */, {DateTime? current}) {
     current ??= DateTime.now();
     final int expiresInMSeconds = expires.microsecondsSinceEpoch;
     if (expiresInMSeconds.isNaN) {

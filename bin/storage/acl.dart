@@ -1,11 +1,9 @@
 import '../common/index.dart';
 
-typedef AclRequestCallback = Function(DecorateRequestOptions reqOpts, BodyResponseCallback callback);
-
 abstract class AclOptions {
   late String pathPrefix;
 
-  late AclRequestCallback request;
+  late RequestBodyCallback request;
 }
 
 typedef GetAclResponse = List<dynamic>; // [AccessControlObject | AccessControlObject[], Metadata]
@@ -136,10 +134,10 @@ class Acl extends AclRoleAccessorMethods {
   late String pathPrefix;
 
   // ignore: non_constant_identifier_names
-  late AclRequestCallback request_;
+  late RequestBodyCallback request_;
 
   // todo - finish method
-  Future<dynamic /* void | Future<AddAclResponse>*/ > add(AddAclOptions options, AddAclCallback callback) async {
+  Future<AddAclResponse?> add(AddAclOptions options, AddAclCallback callback) async {
     AclQuery? query;
 
     if (options.generation != null) {
@@ -152,6 +150,7 @@ class Acl extends AclRoleAccessorMethods {
 
     // todo - request
 
-    return;
+    AddAclResponse? addAclResponse;
+    return addAclResponse;
   }
 }
