@@ -1,30 +1,51 @@
 import '../common/index.dart';
 
-abstract class GetCredentialsResponse {
-  String? client_email;
+class GetCredentialsResponse {
+  GetCredentialsResponse(this.client_email);
+
+  // ignore: non_constant_identifier_names
+  final String? client_email;
 }
 
-abstract class AuthClient {
-  Future<String> sign(String blobToSign);
+typedef SignCallback = Future<String> Function(String blobToSign);
 
-  Future<GetCredentialsResponse> getCredentials();
+typedef GetCredentialsCallback = Future<GetCredentialsResponse> Function();
+
+class AuthClient {
+  AuthClient(this.sign, this.getCredentials);
+
+  SignCallback sign;
+  GetCredentialsCallback getCredentials;
 }
 
-abstract class BucketI {
-  late String name;
+class BucketI {
+  BucketI(this.name);
+
+  String name;
 }
 
-abstract class FileI {
-  late String name;
+class FileI {
+  FileI(this.name);
+
+  String name;
 }
 
-abstract class Query {
-  Map<dynamic, dynamic> values = <dynamic, dynamic>{};
+class Query {
+  Query() : values = <String, dynamic>{};
+  Map<dynamic, dynamic> values;
 }
 
 class GetSignedUrlConfigInternal {
-  GetSignedUrlConfigInternal(this.expiration, this.method, this.bucket,
-      {this.accessibleAt, this.queryParams, this.cname, this.contentMd5, this.contentType, this.file});
+  GetSignedUrlConfigInternal(
+      {required this.expiration,
+      this.accessibleAt,
+      required this.method,
+      this.queryParams,
+      this.cname,
+      this.contentMd5,
+      this.contentType,
+      required this.bucket,
+      this.file});
 
   int expiration;
   DateTime? accessibleAt;
@@ -39,23 +60,23 @@ class GetSignedUrlConfigInternal {
   String? file;
 }
 
-abstract class SignedUrlQuery {
+class SignedUrlQuery {
   int? generation;
 // todo - 'response-content-type'?: string;
 // todo - 'response-content-disposition'?: string;
 }
 
-abstract class V2SignedUrlQuery extends SignedUrlQuery {
+class V2SignedUrlQuery extends SignedUrlQuery {
   late String GoogleAccessId;
   late int Expires;
   late String Signature;
 }
 
-abstract class V4SignedUrlQuery extends V4UrlQuery {
+class V4SignedUrlQuery extends V4UrlQuery {
 // todo 'X-Goog-Signature': string;
 }
 
-abstract class V4UrlQuery extends SignedUrlQuery {
+class V4UrlQuery extends SignedUrlQuery {
   // todo
 // 'X-Goog-Algorithm': string;
 // 'X-Goog-Credential': string;
@@ -64,10 +85,22 @@ abstract class V4UrlQuery extends SignedUrlQuery {
 // 'X-Goog-SignedHeaders': string;
 }
 
-abstract class SignerGetSignedUrlConfig {
-  late String method; // 'GET' | 'PUT' | 'DELETE' | 'POST';
-  late dynamic expires; // string | number | Date;
-  late dynamic accessibleAt; // string | number | Date;
+class SignerGetSignedUrlConfig {
+  SignerGetSignedUrlConfig({
+    required this.method,
+    required this.expires,
+    required this.accessibleAt,
+    this.virtualHostedStyle,
+    this.version,
+    this.cname,
+    this.queryParams,
+    this.contentMd5,
+    this.contentType,
+  });
+
+  String method; // 'GET' | 'PUT' | 'DELETE' | 'POST';
+  dynamic expires; // string | number | Date;
+  dynamic accessibleAt; // string | number | Date;
   bool? virtualHostedStyle;
   String? version; // 'v2' | 'v4';
   String? cname;
@@ -127,10 +160,11 @@ class URLSigner {
     const int secondsToMilliseconds = 1000;
 
     final GetSignedUrlConfigInternal config = GetSignedUrlConfigInternal(
-      expiresInSeconds,
-      method,
-      _bucket.name,
-      accessibleAt: null, // todo - add value
+      expiration: expiresInSeconds,
+      method: method,
+      bucket: _bucket.name,
+      accessibleAt: null,
+      // todo - add value
       file: _file != null ? encodeURI(_file!.name, false) : null,
     );
 
@@ -140,10 +174,36 @@ class URLSigner {
 
     final String version = cfg.version ?? DEFAULT_SIGNING_VERSION;
 
+    SignedUrlQuery signedUrlQuery;
+
+    if (version == 'v2') {
+      signedUrlQuery = await getSignedUrlV2(config);
+    } else if (version == 'v4') {
+      signedUrlQuery = await getSignedUrlV4(config);
+    } else {
+      throw Exception('Invalid signed URL version: $version. Supported versions are \'v2\' and \'v4\'.');
+    }
+
+    final Query query = Query();
+    if (cfg.queryParams != null) {
+      query.values = cfg.queryParams!.values;
+    }
+    // todo - url in dart
+
     // todo - finish method
 
     const SignerGetSignedUrlResponse signedUrlResponse = '';
     return signedUrlResponse;
+  }
+
+  Future<SignedUrlQuery> getSignedUrlV2(GetSignedUrlConfigInternal config) async {
+    // todo - method
+    return SignedUrlQuery();
+  }
+
+  Future<SignedUrlQuery> getSignedUrlV4(GetSignedUrlConfigInternal config) async {
+    // todo - method
+    return SignedUrlQuery();
   }
 
   String getCanonicalRequest(

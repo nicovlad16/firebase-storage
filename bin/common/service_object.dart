@@ -1,37 +1,33 @@
 import 'package:http/http.dart';
 
+import '../util/util.dart' as util;
 import 'index.dart';
-
-const Map<String, dynamic> requestDefaults = <String, dynamic>{
-  'timeout': 60000,
-  'gzip': true,
-  'forever': true,
-  'pool': <String, dynamic>{
-    'maxSockets': 9223372036854775807,
-  },
-};
-
-typedef ResponseBody = dynamic;
-
-abstract class ParsedHttpRespMessage {
-// todo - fields
-}
 
 typedef RequestResponse = List<dynamic>; // [Metadata, r.Response];
 
-abstract class ServiceObjectParent {
-  late List<Interceptor> interceptors;
-  late List<Function> getRequestInterceptors;
+typedef GetRequestInterceptorsCallback = List<Function> Function();
 
-// todo - learn how to do this (callback? method?) - requestStream(reqOpts: DecorateRequestOptions): r.Request;
-  late RequestBodyCallback request;
+typedef RequestStreamCallback = Request Function(DecorateRequestOptions reqOpts);
+
+class ServiceObjectParent {
+  ServiceObjectParent({
+    required this.interceptors,
+    required this.getRequestInterceptors,
+    required this.requestStream,
+    required this.request,
+  });
+
+  List<Interceptor> interceptors;
+  GetRequestInterceptorsCallback getRequestInterceptors;
+  RequestStreamCallback requestStream;
+  util.RequestCallback request;
 }
 
-abstract class Interceptor {
+class Interceptor {
   // todo - request(opts: r.Options): DecorateRequestOptions;
 }
 
-typedef GetMetadataOptions = Map<dynamic, dynamic>;
+typedef GetMetadataOptions = Map<String, dynamic>;
 
 typedef Metadata = dynamic;
 
@@ -43,11 +39,20 @@ typedef MetadataCallback = void Function(
   Response? apiResponse,
 );
 
-typedef ExistsOptions = Map<dynamic, dynamic>;
+typedef ExistsOptions = Map<String, dynamic>;
 
 typedef ExistsCallback = void Function(Exception? err, bool? exists);
 
-abstract class ServiceObjectConfig {
+class ServiceObjectConfig {
+  ServiceObjectConfig({
+    this.baseUrl,
+    this.createMethod,
+    this.id,
+    this.methods,
+    required this.parent,
+    this.pollIntervalMs,
+  });
+
   /// The base URL to make API requests to.
   String? baseUrl;
 
@@ -61,19 +66,19 @@ abstract class ServiceObjectConfig {
   Methods? methods;
 
   /// The parent service instance. For example, an instance of Storage if the object is Bucket.
-  late ServiceObjectParent parent;
+  ServiceObjectParent parent;
 
   /// For long running operations, how often should the client poll for completion.
   int? pollIntervalMs;
 }
 
-abstract class Methods {
+class Methods {
   // todo - finish this
 }
 
 typedef InstanceResponseCallback<T> = void Function(ApiError? err, T? instance, Response? apiResponse);
 
-abstract class CreateOptions {}
+class CreateOptions {}
 
 typedef CreateResponse<T> = List<dynamic>;
 
@@ -83,11 +88,13 @@ typedef CreateCallback<T> = void Function(
   List<dynamic> args, // todo - variable number of args
 );
 
-typedef DeleteOptions = Map<dynamic, dynamic>;
+typedef DeleteOptions = Map<String, dynamic>;
 
 typedef DeleteCallback = void Function(Exception? err, Response? apiResponse);
 
-abstract class GetConfig {
+class GetConfig {
+  GetConfig([this.autoCreate]);
+
   /// Create the object if it doesn't already exist.
   bool? autoCreate;
 }
@@ -100,7 +107,7 @@ typedef ResponseCallback = void Function(Exception? err, Response? apiResponse);
 
 typedef SetMetadataResponse = List<Metadata>;
 
-typedef SetMetadataOptions = Map<dynamic, dynamic>;
+typedef SetMetadataOptions = Map<String, dynamic>;
 
 /// ServiceObject is a base class, meant to be inherited from by a "service
 /// object," like a BigQuery dataset or Storage bucket.

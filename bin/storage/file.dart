@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../common/index.dart';
+import '../util/util.dart' as util;
 import 'acl.dart';
 import 'bucket.dart';
 import 'signer.dart';
@@ -9,17 +10,29 @@ typedef GetExpirationDateResponse = List<DateTime>;
 
 typedef GetExpirationDateCallback = void Function(Exception? err, DateTime? expirationDate, Metadata? apiResponse);
 
-abstract class PolicyDocument {
-  late String string;
-  late String base64;
-  late String signature;
+class PolicyDocument {
+  PolicyDocument({required this.string, required this.base64, required this.signature});
+
+  String string;
+  String base64;
+  String signature;
 }
 
 typedef GetSignedPolicyResponse = List<PolicyDocument>;
 
 typedef GetSignedPolicyCallback = void Function(Exception? err, PolicyDocument? policy);
 
-abstract class GetSignedPolicyOptions {
+class GetSignedPolicyOptions {
+  GetSignedPolicyOptions({
+    required this.equals,
+    required this.expires,
+    required this.startsWith,
+    this.acl,
+    this.successRedirect,
+    this.successStatus,
+    this.contentLengthRange,
+  });
+
   dynamic equals; // string[] | string[][];
   dynamic expires; // string | number | Date;
   dynamic startsWith; // string[] | string[][];
@@ -27,6 +40,7 @@ abstract class GetSignedPolicyOptions {
   String? successRedirect;
   String? successStatus;
   Map<String, int>? contentLengthRange; // {min?: number; max?: number};
+
 }
 
 typedef GenerateSignedPostPolicyV2Options = GetSignedPolicyOptions;
@@ -35,15 +49,24 @@ typedef GenerateSignedPostPolicyV2Response = GetSignedPolicyResponse;
 
 typedef GenerateSignedPostPolicyV2Callback = GetSignedPolicyCallback;
 
-abstract class PolicyFields {
-  // todo - map
+class PolicyFields {
+  PolicyFields() : values = <String, String>{};
+  Map<String, String> values;
 }
 
-abstract class GenerateSignedPostPolicyV4Options {
+class GenerateSignedPostPolicyV4Options {
+  GenerateSignedPostPolicyV4Options({
+    required this.expires,
+    this.bucketBoundHostname,
+    this.virtualHostedStyle,
+    this.conditions,
+    this.fields,
+  });
+
   dynamic expires; // string | number | Date;
   String? bucketBoundHostname;
   bool? virtualHostedStyle;
-  List<Map<dynamic, dynamic>>? conditions; // object[]
+  List<Map<String, dynamic>>? conditions; // object[]
   PolicyFields? fields;
 }
 
@@ -51,13 +74,30 @@ typedef GenerateSignedPostPolicyV4Callback = void Function(Exception? err, Signe
 
 typedef GenerateSignedPostPolicyV4Response = List<SignedPostPolicyV4Output>;
 
-abstract class SignedPostPolicyV4Output {
-  late String url;
-  late PolicyFields fields;
+class SignedPostPolicyV4Output {
+  SignedPostPolicyV4Output(this.url, this.fields);
+
+  String url;
+  PolicyFields fields;
 }
 
-abstract class GetSignedUrlConfig {
-  late String action; // 'read' | 'write' | 'delete' | 'resumable';
+class GetSignedUrlConfig {
+  GetSignedUrlConfig({
+    required this.action,
+    this.version,
+    this.virtualHostedStyle,
+    this.cname,
+    this.contentMd5,
+    this.contentType,
+    required this.expires,
+    this.accessibleAt,
+    this.promptSaveAs,
+    this.responseDisposition,
+    this.responseType,
+    this.queryParams,
+  });
+
+  String action; // 'read' | 'write' | 'delete' | 'resumable';
   String? version; // 'v2' | 'v4';
   bool? virtualHostedStyle;
   String? cname;
@@ -72,7 +112,9 @@ abstract class GetSignedUrlConfig {
   Query? queryParams;
 }
 
-abstract class GetFileMetadataOptions {
+class GetFileMetadataOptions {
+  GetFileMetadataOptions([this.userProject]);
+
   String? userProject;
 }
 
@@ -80,7 +122,9 @@ typedef GetFileMetadataResponse = List<Metadata>;
 
 typedef GetFileMetadataCallback = void Function(Exception? err, Metadata? metadata, Metadata? apiResponse);
 
-abstract class GetFileOptions extends GetConfig {
+class GetFileOptions extends GetConfig {
+  GetFileOptions([this.userProject]);
+
   String? userProject;
 }
 
@@ -88,7 +132,9 @@ typedef GetFileResponse = List<dynamic>; // [File, Metadata];
 
 typedef GetFileCallback = void Function(Exception? err, File? file, Metadata? apiResponse);
 
-abstract class FileExistsOptions {
+class FileExistsOptions {
+  FileExistsOptions([this.userProject]);
+
   String? userProject;
 }
 
@@ -108,7 +154,19 @@ typedef DeleteFileCallback = void Function(Exception? err, Metadata? apiResponse
 typedef PredefinedAcl = String;
 // | 'authenticatedRead' | 'bucketOwnerFullControl' | 'bucketOwnerRead' | 'private' | 'projectPrivate' | 'publicRead';
 
-abstract class CreateResumableUploadOptions {
+class CreateResumableUploadOptions {
+  CreateResumableUploadOptions({
+    this.configPath,
+    this.metadata,
+    this.origin,
+    this.offset,
+    this.predefinedAcl,
+    this.private,
+    this.public,
+    this.uri,
+    this.userProject,
+  });
+
   String? configPath;
   Metadata? metadata;
   String? origin;
@@ -124,15 +182,26 @@ typedef CreateResumableUploadResponse = List<String>;
 
 typedef CreateResumableUploadCallback = void Function(Exception? err, String? uri);
 
-abstract class CreateWriteStreamOptions extends CreateResumableUploadOptions {
+class CreateWriteStreamOptions extends CreateResumableUploadOptions {
+  CreateWriteStreamOptions({
+    this.contentType,
+    this.gzip,
+    this.resumable,
+    this.timeout,
+    this.validation,
+  });
+
   String? contentType;
   dynamic gzip; // string | boolean;
   bool? resumable;
   int? timeout;
   dynamic validation; // string | boolean;
+
 }
 
-abstract class MakeFilePrivateOptions {
+class MakeFilePrivateOptions {
+  MakeFilePrivateOptions([this.metadata, this.strict, this.userProject]);
+
   Metadata? metadata;
   bool? strict;
   String? userProject;
@@ -154,7 +223,9 @@ typedef MoveResponse = List<Metadata>;
 
 typedef MoveCallback = void Function(Exception? err, File? destinationFile, Metadata? apiResponse);
 
-abstract class MoveOptions {
+class MoveOptions {
+  MoveOptions([this.userProject]);
+
   String? userProject;
 }
 
@@ -166,7 +237,9 @@ typedef RenameCallback = MoveCallback;
 
 typedef RotateEncryptionKeyOptions = dynamic; // string | Buffer | EncryptionKeyOptions;
 
-abstract class EncryptionKeyOptions {
+class EncryptionKeyOptions {
+  EncryptionKeyOptions(this.encryptionKey, this.kmsKeyName);
+
   dynamic encryptionKey; // string | Buffer;
   String? kmsKeyName;
 }
@@ -175,15 +248,18 @@ typedef RotateEncryptionKeyCallback = CopyCallback;
 
 typedef RotateEncryptionKeyResponse = CopyResponse;
 
-enum ActionToHTTPMethod {
-  // todo - add default values
-  read,
-  write,
-  delete,
-  resumable,
+class ActionToHTTPMethod {
+  const ActionToHTTPMethod._(this._method);
+
+  final String _method;
+
+  static const ActionToHTTPMethod read = ActionToHTTPMethod._('GET');
+  static const ActionToHTTPMethod write = ActionToHTTPMethod._('PUT');
+  static const ActionToHTTPMethod delete = ActionToHTTPMethod._('DELETE');
+  static const ActionToHTTPMethod resumable = ActionToHTTPMethod._('POST');
 }
 
-class ResumableUploadError extends Error {
+class _ResumableUploadError extends Error {
   String name = 'ResumableUploadError';
 }
 
@@ -191,14 +267,28 @@ const String STORAGE_POST_POLICY_BASE_URL = 'https://storage.googleapis.com';
 
 const String _GS_URL_REGEXP = '/^gs:\/\/([a-z0-9_.-]+)\/(.+)\$/';
 
-abstract class FileOptions {
+class FileOptions {
+  FileOptions({this.encryptionKey, this.generation, this.kmsKeyName, this.userProject});
+
   dynamic encryptionKey; // string | Buffer;
   dynamic generation; // number | string;
   String? kmsKeyName;
   String? userProject;
 }
 
-abstract class CopyOptions {
+class CopyOptions {
+  CopyOptions({
+    this.cacheControl,
+    this.contentEncoding,
+    this.contentType,
+    this.contentDisposition,
+    this.destinationKmsKeyName,
+    this.metadata,
+    this.predefinedAcl,
+    this.token,
+    this.userProject,
+  });
+
   String? cacheControl;
   String? contentEncoding;
   String? contentType;
@@ -218,11 +308,21 @@ typedef DownloadResponse = List<ByteBuffer>;
 
 typedef DownloadCallback = void Function(RequestError? err, ByteBuffer contents);
 
-abstract class DownloadOptions extends CreateReadStreamOptions {
+class DownloadOptions extends CreateReadStreamOptions {
+  DownloadOptions([this.destination]);
+
   String? destination;
 }
 
-abstract class CopyQuery {
+class CopyQuery {
+  CopyQuery({
+    this.sourceGeneration,
+    this.rewriteToken,
+    this.userProject,
+    this.destinationKmsKeyName,
+    this.destinationPredefinedAcl,
+  });
+
   String? sourceGeneration;
   String? rewriteToken;
   String? userProject;
@@ -230,13 +330,17 @@ abstract class CopyQuery {
   String? destinationPredefinedAcl;
 }
 
-abstract class FileQuery {
-  late String alt;
+class FileQuery {
+  FileQuery({required this.alt, this.generation, this.userProject});
+
+  String alt;
   int? generation;
   String? userProject;
 }
 
-abstract class CreateReadStreamOptions {
+class CreateReadStreamOptions {
+  CreateReadStreamOptions({this.userProject, this.validation, this.start, this.end, this.decompress});
+
   String? userProject;
   dynamic validation; // 'md5' | 'crc32c' | false | true;
   int? start;
@@ -244,13 +348,15 @@ abstract class CreateReadStreamOptions {
   bool? decompress;
 }
 
-abstract class SaveOptions extends CreateWriteStreamOptions {
-  void onUploadProgress(dynamic progressEvent);
+class SaveOptions extends CreateWriteStreamOptions {
+  util.OnUploadProgressCallback? onUploadProgress;
 }
 
 typedef SaveCallback = void Function(Exception? err);
 
-abstract class SetFileMetadataOptions {
+class SetFileMetadataOptions {
+  SetFileMetadataOptions([this.userProject]);
+
   String? userProject;
 }
 
@@ -260,11 +366,15 @@ typedef SetFileMetadataResponse = List<Metadata>;
 
 typedef SetStorageClassResponse = List<Metadata>;
 
-abstract class SetStorageClassOptions {
+class SetStorageClassOptions {
+  SetStorageClassOptions([this.userProject]);
+
   String? userProject;
 }
 
-abstract class SetStorageClassRequest extends SetStorageClassOptions {
+class SetStorageClassRequest extends SetStorageClassOptions {
+  SetStorageClassRequest([this.storageClass]);
+
   String? storageClass;
 }
 

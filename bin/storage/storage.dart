@@ -2,11 +2,13 @@ import '../common/index.dart';
 import 'bucket.dart';
 import 'hmacKey.dart';
 
-abstract class GetServiceAccountOptions {
+class GetServiceAccountOptions {
   String? userProject;
 }
 
-abstract class ServiceAccount {
+class ServiceAccount {
+  ServiceAccount([this.emailAddress]);
+
   String? emailAddress;
 }
 
@@ -18,12 +20,16 @@ typedef GetServiceAccountCallback = void Function(
   Metadata? apiResponse,
 );
 
-abstract class CreateBucketQuery {
-  late String project;
-  late String userProject;
+class CreateBucketQuery {
+  CreateBucketQuery({required this.project, required this.userProject});
+
+  String project;
+  String userProject;
 }
 
-abstract class StorageOptions extends ServiceOptions {
+class StorageOptions extends ServiceOptions {
+  StorageOptions(this.autoRetry, this.maxRetries, this.future, this.apiEndpoint);
+
   bool? autoRetry;
   int? maxRetries;
 
@@ -33,27 +39,50 @@ abstract class StorageOptions extends ServiceOptions {
 
   ///  The API endpoint of the service used to make requests.
   ///  Defaults to `storage.googleapis.com`.
-
   String? apiEndpoint;
 }
 
-abstract class BucketOptions {
+class BucketOptions {
+  BucketOptions({this.kmsKeyName, this.userProject});
+
   String? kmsKeyName;
+
   String? userProject;
 }
 
-abstract class Cors {
+class Cors {
+  Cors({this.maxAgeSeconds, this.method, this.origin, this.responseHeader});
+
   int? maxAgeSeconds;
   List<String>? method;
   List<String>? origin;
   List<String>? responseHeader;
 }
 
-abstract class Versioning {
+class Versioning {
+  Versioning([this.enabled]);
+
   bool? enabled;
 }
 
-abstract class CreateBucketRequest {
+class CreateBucketRequest {
+  CreateBucketRequest({
+    this.archive,
+    this.coldline,
+    this.cors,
+    this.dra,
+    this.multiRegional,
+    this.nearline,
+    this.regional,
+    this.requesterPays,
+    this.retentionPolicy,
+    this.standard,
+    this.storageClass,
+    this.userProject,
+    this.location,
+    this.versioning,
+  });
+
   bool? archive;
   bool? coldline;
   List<Cors>? cors;
@@ -62,7 +91,7 @@ abstract class CreateBucketRequest {
   bool? nearline;
   bool? regional;
   bool? requesterPays;
-  Map<dynamic, dynamic>? retentionPolicy;
+  Map<String, dynamic>? retentionPolicy;
   bool? standard;
   String? storageClass;
   String? userProject;
@@ -79,11 +108,20 @@ typedef GetBucketsResponse = List<dynamic>; // [Bucket[], {}, Metadata];
 typedef GetBucketsCallback = void Function(
   Exception? err,
   List<Bucket>? buckets,
-  Map<dynamic, dynamic>? nextQuery,
+  Map<String, dynamic>? nextQuery,
   Metadata? apiResponse,
 );
 
-abstract class GetBucketsRequest {
+class GetBucketsRequest {
+  GetBucketsRequest(
+      {this.prefix,
+      this.project,
+      this.autoPaginate,
+      this.maxApiCalls,
+      this.maxResults,
+      this.pageToken,
+      this.userProject});
+
   String? prefix;
   String? project;
   bool? autoPaginate;
@@ -93,14 +131,18 @@ abstract class GetBucketsRequest {
   String? userProject;
 }
 
-abstract class HmacKeyResourceResponse {
-  late HmacKeyMetadata metadata;
-  late String secret;
+class HmacKeyResourceResponse {
+  HmacKeyResourceResponse(this.metadata, this.secret);
+
+  HmacKeyMetadata metadata;
+  String secret;
 }
 
 typedef CreateHmacKeyResponse = List<dynamic>; // [HmacKey, string, HmacKeyResourceResponse];
 
-abstract class CreateHmacKeyOptions {
+class CreateHmacKeyOptions {
+  CreateHmacKeyOptions({this.projectId, this.userProject});
+
   String? projectId;
   String? userProject;
 }
@@ -112,7 +154,17 @@ typedef CreateHmacKeyCallback = void Function(
   HmacKeyResourceResponse? apiResponse,
 );
 
-abstract class GetHmacKeysOptions {
+class GetHmacKeysOptions {
+  GetHmacKeysOptions(
+      {this.projectId,
+      this.serviceAccountEmail,
+      this.showDeletedKeys,
+      this.autoPaginate,
+      this.maxApiCalls,
+      this.maxResults,
+      this.pageToken,
+      this.userProject});
+
   String? projectId;
   String? serviceAccountEmail;
   bool? showDeletedKeys;

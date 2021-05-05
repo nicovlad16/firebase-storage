@@ -1,12 +1,25 @@
 import '../common/index.dart';
 import 'storage.dart';
 
-abstract class HmacKeyOptions {
+class HmacKeyOptions {
+  HmacKeyOptions([this.projectId]);
+
   String? projectId;
 }
 
-abstract class HmacKeyMetadata {
-  late String accessId;
+class HmacKeyMetadata {
+  HmacKeyMetadata({
+    required this.accessId,
+    this.etag,
+    this.id,
+    this.projectId,
+    this.serviceAccountEmail,
+    this.state,
+    this.timeCreated,
+    this.updated,
+  });
+
+  String accessId;
   String? etag;
   String? id;
   String? projectId;
@@ -16,12 +29,16 @@ abstract class HmacKeyMetadata {
   String? updated;
 }
 
-abstract class SetHmacKeyMetadataOptions {
+class SetHmacKeyMetadataOptions {
+  SetHmacKeyMetadataOptions([this.userProject]);
+
   /// This parameter is currently ignored.
   String? userProject;
 }
 
-abstract class SetHmacKeyMetadata {
+class SetHmacKeyMetadata {
+  SetHmacKeyMetadata({this.state, this.etag});
+
   String? state; //  'ACTIVE' | 'INACTIVE'
   String? etag;
 }
@@ -35,5 +52,6 @@ class HmacKey extends ServiceObject {
   HmacKey(Storage storage, String accessId, HmacKeyOptions? options) {
     // todo - finish constructor
   }
+
   HmacKeyMetadata? metadata;
 }

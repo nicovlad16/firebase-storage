@@ -1,24 +1,33 @@
 import '../common/index.dart';
+import '../util/util.dart' as util;
 import 'channel.dart';
 import 'file.dart';
 import 'notification.dart';
 import 'signer.dart';
 
-abstract class SourceObject {
-  late String name;
+class SourceObject {
+  SourceObject(this.name, [this.generation]);
+
+  String name;
   int? generation;
 }
 
-abstract class CreateNotificationQuery {
+class CreateNotificationQuery {
+  CreateNotificationQuery([this.userProject]);
+
   String? userProject;
 }
 
-abstract class MetadataOptions {
-  late String predefinedAcl;
+class MetadataOptions {
+  MetadataOptions(this.predefinedAcl, [this.userProject]);
+
+  String predefinedAcl;
   String? userProject;
 }
 
-abstract class BucketOptions {
+class BucketOptions {
+  BucketOptions([this.userProject]);
+
   String? userProject;
 }
 
@@ -31,7 +40,17 @@ typedef GetFilesCallback = void Function(
   Metadata? apiResponse,
 );
 
-abstract class WatchAllOptions {
+class WatchAllOptions {
+  WatchAllOptions({
+    this.delimiter,
+    this.maxResults,
+    this.pageToken,
+    this.prefix,
+    this.projection,
+    this.userProject,
+    this.versions,
+  });
+
   String? delimiter;
   int? maxResults;
   String? pageToken;
@@ -41,22 +60,43 @@ abstract class WatchAllOptions {
   bool? versions;
 }
 
-abstract class AddLifecycleRuleOptions {
+class AddLifecycleRuleOptions {
+  AddLifecycleRuleOptions([this.append]);
+
   bool? append;
 }
 
-abstract class LifecycleRule {
+class LifecycleRule {
+  LifecycleRule({required this.action, required this.condition, this.storageClass});
+
   dynamic action; // {type: string; storageClass?: string} | string;
   dynamic condition; // {[key: string]: boolean | Date | number | string};
   String? storageClass;
 }
 
-abstract class EnableLoggingOptions {
+class EnableLoggingOptions {
+  EnableLoggingOptions(this.bucket, this.prefix);
+
   dynamic bucket; // string | Bucket
-  late String prefix;
+  String prefix;
 }
 
-abstract class GetFilesOptions {
+class GetFilesOptions {
+  GetFilesOptions({
+    this.autoPaginate,
+    this.delimiter,
+    this.directory,
+    this.endOffset,
+    this.includeTrailingDelimiter,
+    this.prefix,
+    this.maxApiCalls,
+    this.maxResults,
+    this.pageToken,
+    this.startOffset,
+    this.userProject,
+    this.versions,
+  });
+
   bool? autoPaginate;
   String? delimiter;
 
@@ -73,28 +113,42 @@ abstract class GetFilesOptions {
   bool? versions;
 }
 
-abstract class CombineOptions {
+class CombineOptions {
+  CombineOptions({this.kmsKeyName, this.userProject});
+
   String? kmsKeyName;
   String? userProject;
 }
 
-typedef CombineCallback = void Function(Exception? err, File? file, Metadata? apiResponse);
+typedef CombineCallback = void Function(Exception? err, File? file, Metadata apiResponse);
 
 typedef CombineResponse = List<dynamic>; // [File, Metadata];
 
-abstract class CreateChannelConfig extends WatchAllOptions {
-  late String address;
+class CreateChannelConfig extends WatchAllOptions {
+  CreateChannelConfig(this.address);
+
+  String address;
 }
 
-abstract class CreateChannelOptions {
+class CreateChannelOptions {
+  CreateChannelOptions([this.userProject]);
+
   String? userProject;
 }
 
 typedef CreateChannelResponse = List<dynamic>; // [Channel, Metadata];
 
-typedef CreateChannelCallback = void Function(Exception? err, Channel? channel, Metadata? apiResponse);
+typedef CreateChannelCallback = void Function(Exception? err, Channel? channel, Metadata apiResponse);
 
-abstract class CreateNotificationOptions {
+class CreateNotificationOptions {
+  CreateNotificationOptions({
+    this.customAttributes,
+    this.eventTypes,
+    this.objectNamePrefix,
+    this.payloadFormat,
+    this.userProject,
+  });
+
   Map<String, String>? customAttributes;
   List<String>? eventTypes;
   String? objectNamePrefix;
@@ -102,11 +156,13 @@ abstract class CreateNotificationOptions {
   String? userProject;
 }
 
-typedef CreateNotificationCallback = void Function(Exception? err, Notification? notification, Metadata? apiResponse);
+typedef CreateNotificationCallback = void Function(Exception? err, Notification? notification, Metadata apiResponse);
 
 typedef CreateNotificationResponse = List<dynamic>; // [Notification, Metadata];
 
-abstract class DeleteBucketOptions {
+class DeleteBucketOptions {
+  DeleteBucketOptions({this.ignoreNotFound, this.userProject});
+
   bool? ignoreNotFound;
   String? userProject;
 }
@@ -115,13 +171,15 @@ typedef DeleteBucketResponse = List<Metadata>;
 
 typedef DeleteBucketCallback = void Function(Exception? err, Metadata? apiResponse);
 
-abstract class DeleteFilesOptions extends GetFilesOptions {
+class DeleteFilesOptions extends GetFilesOptions {
+  DeleteFilesOptions({this.force});
+
   bool? force;
 }
 
 typedef DeleteFilesCallback = void Function(
   dynamic err /* Error | Error[] | null */,
-  Map<dynamic, dynamic>? apiResponse,
+  Map<String, dynamic>? apiResponse,
 );
 
 typedef DeleteLabelsResponse = List<Metadata>;
@@ -130,13 +188,15 @@ typedef DeleteLabelsCallback = SetLabelsCallback;
 
 typedef DisableRequesterPaysResponse = List<Metadata>;
 
-typedef DisableRequesterPaysCallback = void Function(Exception? err, Map<dynamic, dynamic>? apiResponse);
+typedef DisableRequesterPaysCallback = void Function(Exception? err, Map<String, dynamic>? apiResponse);
 
 typedef EnableRequesterPaysResponse = List<Metadata>;
 
 typedef EnableRequesterPaysCallback = void Function(Exception? err, Metadata? apiResponse);
 
-abstract class BucketExistsOptions extends GetConfig {
+class BucketExistsOptions extends GetConfig {
+  BucketExistsOptions({this.userProject});
+
   String? userProject;
 }
 
@@ -144,32 +204,46 @@ typedef BucketExistsResponse = List<bool>;
 
 typedef BucketExistsCallback = ExistsCallback;
 
-abstract class GetBucketOptions extends GetConfig {
+class GetBucketOptions extends GetConfig {
+  GetBucketOptions({this.userProject});
+
   String? userProject;
 }
 
 typedef GetBucketResponse = List<dynamic>; // [Bucket, Metadata];
 
-typedef GetBucketCallback = void Function(Exception? err, Bucket? bucket, Metadata? apiResponse);
+typedef GetBucketCallback = void Function(Exception? err, Bucket? bucket, Metadata apiResponse);
 
-abstract class GetLabelsOptions {
+class GetLabelsOptions {
+  GetLabelsOptions({this.userProject});
+
   String? userProject;
 }
 
 typedef GetLabelsResponse = List<Metadata>;
 
-typedef GetLabelsCallback = void Function(Exception? err, Map<dynamic, dynamic>? labels);
+typedef GetLabelsCallback = void Function(Exception? err, Map<String, dynamic>? labels);
 
 typedef GetBucketMetadataResponse = List<Metadata>;
 
-typedef GetBucketMetadataCallback = void Function(Exception? err, Metadata? metadata, Metadata? apiResponse);
+typedef GetBucketMetadataCallback = void Function(Exception? err, Metadata? metadata, Metadata apiResponse);
 
-abstract class GetBucketMetadataOptions {
+class GetBucketMetadataOptions {
+  GetBucketMetadataOptions({this.userProject});
+
   String? userProject;
 }
 
-abstract class GetBucketSignedUrlConfig {
-  String action = 'list';
+class GetBucketSignedUrlConfig {
+  GetBucketSignedUrlConfig({
+    this.version,
+    this.cname,
+    this.virtualHostedStyle,
+    this.expires,
+    this.queryParams,
+  }) : action = 'list';
+
+  String action;
   String? version; // 'v2' | 'v4';
   String? cname;
   bool? virtualHostedStyle;
@@ -178,9 +252,12 @@ abstract class GetBucketSignedUrlConfig {
   Query? queryParams;
 }
 
-enum BucketActionToHTTPMethod {
-  // todo - list = 'GET',
-  list,
+class BucketActionToHTTPMethod {
+  const BucketActionToHTTPMethod._(this._method);
+
+  final String _method;
+
+  static const BucketActionToHTTPMethod list = BucketActionToHTTPMethod._('GET');
 }
 
 abstract class GetNotificationsOptions {
@@ -190,19 +267,23 @@ abstract class GetNotificationsOptions {
 typedef GetNotificationsCallback = void Function(
   Exception? err,
   List<Notification>? notifications,
-  Metadata? apiResponse,
+  Metadata apiResponse,
 );
 
 typedef GetNotificationsResponse = List<dynamic>; // [Notification[], Metadata];
 
-abstract class MakeBucketPrivateOptions {
+class MakeBucketPrivateOptions {
+  MakeBucketPrivateOptions({this.includeFiles, this.force, this.metadata, this.userProject});
+
   bool? includeFiles;
   bool? force;
   Metadata? metadata;
   String? userProject;
 }
 
-abstract class MakeBucketPrivateRequest extends MakeBucketPrivateOptions {
+class MakeBucketPrivateRequest extends MakeBucketPrivateOptions {
+  MakeBucketPrivateRequest([this.private]);
+
   bool? private;
 }
 
@@ -210,7 +291,9 @@ typedef MakeBucketPrivateResponse = List<List<File>>;
 
 typedef MakeBucketPrivateCallback = void Function(Exception? err, List<File>? files);
 
-abstract class MakeBucketPublicOptions {
+class MakeBucketPublicOptions {
+  MakeBucketPublicOptions({this.includeFiles, this.force});
+
   bool? includeFiles;
   bool? force;
 }
@@ -219,7 +302,9 @@ typedef MakeBucketPublicCallback = void Function(Exception? err, List<File>? fil
 
 typedef MakeBucketPublicResponse = List<List<File>>;
 
-abstract class SetBucketMetadataOptions {
+class SetBucketMetadataOptions {
+  SetBucketMetadataOptions([this.userProject]);
+
   String? userProject;
 }
 
@@ -231,11 +316,14 @@ typedef BucketLockCallback = void Function(Exception? err, Metadata? apiResponse
 
 typedef BucketLockResponse = List<Metadata>;
 
-abstract class Labels {
-// todo - [key: string]: string;
+class Labels {
+  Labels() : values = <String, String>{};
+  Map<String, String> values;
 }
 
-abstract class SetLabelsOptions {
+class SetLabelsOptions {
+  SetLabelsOptions([this.userProject]);
+
   String? userProject;
 }
 
@@ -243,7 +331,9 @@ typedef SetLabelsResponse = List<Metadata>;
 
 typedef SetLabelsCallback = void Function(Exception? err, Metadata? metadata);
 
-abstract class SetBucketStorageClassOptions {
+class SetBucketStorageClassOptions {
+  SetBucketStorageClassOptions([this.userProject]);
+
   String? userProject;
 }
 
@@ -253,17 +343,20 @@ typedef UploadResponse = List<dynamic>; // [File, Metadata];
 
 typedef UploadCallback = void Function(Exception? err, File? file, Metadata? apiResponse);
 
-abstract class UploadOptionsBase extends CreateResumableUploadOptions {}
+class UploadOptionsBase extends CreateResumableUploadOptions {}
 
-abstract class UploadOptions extends CreateWriteStreamOptions {
+class UploadOptions extends CreateWriteStreamOptions {
+  UploadOptions({required this.destination, required this.encryptionKey, this.kmsKeyName, this.onUploadProgress});
+
   dynamic destination; // string | File;
   dynamic encryptionKey; // string | Buffer;
   String? kmsKeyName;
-
-  void onUploadProgress(dynamic progressEvent);
+  util.OnUploadProgressCallback? onUploadProgress;
 }
 
-abstract class MakeAllFilesPublicPrivateOptions {
+class MakeAllFilesPublicPrivateOptions {
+  MakeAllFilesPublicPrivateOptions({this.force, this.private, this.public, this.userProject});
+
   bool? force;
   bool? private;
   bool? public;
@@ -275,7 +368,7 @@ typedef MakeAllFilesPublicPrivateCallback = void Function(
   List<File>? files,
 );
 
-typedef MakeAllFilesPublicPrivateResponse = List<List<File>>;
+typedef MakeAllFilesPublicPrivateResponse = List<List<File>>; // [File[]];
 
 const int _RESUMABLE_THRESHOLD = 5000000;
 
@@ -300,6 +393,7 @@ class Bucket extends ServiceObject {
   // }
 
   Metadata metadata;
+
   // String name;
 
   /// A reference to the {@link Storage} associated with this {@link Bucket}
@@ -313,11 +407,11 @@ class Bucket extends ServiceObject {
   /// @type {string}
   String? userProject;
 
-  // Acl acl;
-  // Iam iam;
-  //
-  // Function getFilesStream;
-  // URLSigner signer;
+// Acl acl;
+// Iam iam;
+//
+// Function getFilesStream;
+// URLSigner signer;
 
 // String getId() {
 //   return '';

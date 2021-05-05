@@ -1,11 +1,15 @@
 import '../common/index.dart';
 import 'bucket.dart';
 
-abstract class DeleteNotificationOptions {
+class DeleteNotificationOptions {
+  DeleteNotificationOptions([this.userProject]);
+
   String? userProject;
 }
 
-abstract class GetNotificationMetadataOptions {
+class GetNotificationMetadataOptions {
+  GetNotificationMetadataOptions([this.userProject]);
+
   String? userProject;
 }
 
@@ -15,7 +19,9 @@ typedef GetNotificationMetadataCallback = void Function(Exception? err, Response
 
 typedef GetNotificationResponse = List<dynamic>; // [Notification, Metadata];
 
-abstract class GetNotificationOptions {
+class GetNotificationOptions {
+  GetNotificationOptions([this.autoCreate, this.userProject]);
+
   /// Automatically create the object if it does not exist. Default: `false`.
   bool? autoCreate;
 

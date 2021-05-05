@@ -1,5 +1,5 @@
 // todo - finish class
-abstract class ServiceOptions {}
+class ServiceOptions {}
 
 // todo - finish class
 class Service {}

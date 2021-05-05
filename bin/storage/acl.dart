@@ -1,9 +1,11 @@
 import '../common/index.dart';
+import '../util/util.dart' as util;
 
-abstract class AclOptions {
-  late String pathPrefix;
+class AclOptions {
+  AclOptions(this.pathPrefix, this.request);
 
-  late RequestBodyCallback request;
+  String pathPrefix;
+  util.RequestCallback request;
 }
 
 typedef GetAclResponse = List<dynamic>; // [AccessControlObject | AccessControlObject[], Metadata]
@@ -14,15 +16,19 @@ typedef GetAclCallback = void Function(
   Metadata? apiResponse,
 );
 
-abstract class GetAclOptions {
-  late String entity;
+class GetAclOptions {
+  GetAclOptions(this.entity, [this.generation, this.userProject]);
+
+  String entity;
   int? generation;
   String? userProject;
 }
 
-abstract class UpdateAclOptions {
-  late String entity;
-  late String role;
+class UpdateAclOptions {
+  UpdateAclOptions({required this.entity, required this.role, this.generation, this.userProject});
+
+  String entity;
+  String role;
   int? generation;
   String? userProject;
 }
@@ -32,8 +38,10 @@ typedef UpdateAclResponse = List<dynamic>; // [AccessControlObject, Metadata]
 typedef UpdateAclCallback = void Function(Exception? err, AccessControlObject? acl, Metadata? apiResponse);
 
 abstract class AddAclOptions {
-  late String entity;
-  late String role;
+  AddAclOptions({required this.entity, required this.role, this.generation, this.userProject});
+
+  String entity;
+  String role;
   int? generation;
   String? userProject;
 }
@@ -47,21 +55,27 @@ typedef RemoveAclResponse = List<Metadata>; // [Metadata];
 typedef RemoveAclCallback = void Function(Exception? err, Metadata? apiResponse);
 
 abstract class RemoveAclOptions {
-  late String entity;
+  RemoveAclOptions(this.entity, [this.generation, this.userProject]);
+
+  String entity;
   int? generation;
   String? userProject;
 }
 
-abstract class AclQuery {
-  late int generation;
-  late String userProject;
-  Map<String, dynamic> values = <String, dynamic>{};
+class AclQuery {
+  AclQuery(this.generation, this.userProject) : values = <String, dynamic>{};
+
+  int generation;
+  String userProject;
+  Map<String, dynamic> values;
 }
 
-abstract class AccessControlObject {
-  late String entity;
-  late String role;
-  late String projectTeam;
+class AccessControlObject {
+  AccessControlObject({required this.entity, required this.role, required this.projectTeam});
+
+  String entity;
+  String role;
+  String projectTeam;
 }
 
 // todo - finish class
@@ -70,11 +84,9 @@ class AclRoleAccessorMethods {
     Map<dynamic, dynamic>? owners,
     Map<dynamic, dynamic>? readers,
     Map<dynamic, dynamic>? writers,
-  }) {
-    this.owners = owners ?? <dynamic, dynamic>{};
-    this.readers = owners ?? <dynamic, dynamic>{};
-    this.writers = owners ?? <dynamic, dynamic>{};
-
+  })  : owners = <dynamic, dynamic>{},
+        readers = <dynamic, dynamic>{},
+        writers = <dynamic, dynamic>{} {
     _roles.forEach(_assignAccessMethods);
   }
 
@@ -94,11 +106,11 @@ class AclRoleAccessorMethods {
 
   static const List<String> _roles = <String>['OWNER', 'READER', 'WRITER'];
 
-  Map<dynamic, dynamic> owners = <dynamic, dynamic>{};
+  Map<dynamic, dynamic> owners;
 
-  Map<dynamic, dynamic> readers = <dynamic, dynamic>{};
+  Map<dynamic, dynamic> readers;
 
-  Map<dynamic, dynamic> writers = <dynamic, dynamic>{};
+  Map<dynamic, dynamic> writers;
 
   void _assignAccessMethods(String role) {
     const List<String> accessMethods = AclRoleAccessorMethods._accessMethods;
@@ -134,7 +146,7 @@ class Acl extends AclRoleAccessorMethods {
   late String pathPrefix;
 
   // ignore: non_constant_identifier_names
-  late RequestBodyCallback request_;
+  late util.RequestCallback request_;
 
   // todo - finish method
   Future<AddAclResponse?> add(AddAclOptions options, AddAclCallback callback) async {
