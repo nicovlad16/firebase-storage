@@ -25,10 +25,5 @@ typedef BodyResponseCallback = void Function(
   Response? res,
 );
 
-String encodeURI(String uri, bool encodeSlash) {
-  return uri;
-  // todo - finish function
-}
-
 // todo - finish class
 class ApiError {}

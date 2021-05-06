@@ -1,7 +1,7 @@
-import '../common/index.dart';
+import 'package:firebase_storage/storage/util.dart';
 
 class GetCredentialsResponse {
-  GetCredentialsResponse([this.client_email]);
+  GetCredentialsResponse({this.client_email});
 
   // ignore: non_constant_identifier_names
   final String? client_email;
@@ -12,7 +12,7 @@ typedef SignCallback = Future<String> Function(String blobToSign);
 typedef GetCredentialsCallback = Future<GetCredentialsResponse> Function();
 
 class AuthClient {
-  AuthClient(this.sign, this.getCredentials);
+  AuthClient({required this.sign, required this.getCredentials});
 
   SignCallback sign;
   GetCredentialsCallback getCredentials;
@@ -32,7 +32,7 @@ class FileI {
 
 class Query {
   Query() : values = <String, dynamic>{};
-  Map<dynamic, dynamic> values;
+  Map<String, dynamic> values;
 }
 
 class GetSignedUrlConfigInternal {
@@ -40,6 +40,7 @@ class GetSignedUrlConfigInternal {
       {required this.expiration,
       this.accessibleAt,
       required this.method,
+      this.extensionHeaders,
       this.queryParams,
       this.cname,
       this.contentMd5,
@@ -50,8 +51,7 @@ class GetSignedUrlConfigInternal {
   int expiration;
   DateTime? accessibleAt;
   String method;
-
-// todo - extensionHeaders?: http.OutgoingHttpHeaders;
+  Map<String, dynamic>? extensionHeaders;
   Query? queryParams;
   String? cname;
   String? contentMd5;
@@ -91,7 +91,7 @@ class SignerGetSignedUrlConfig {
   SignerGetSignedUrlConfig({
     required this.method,
     required this.expires,
-    required this.accessibleAt,
+    this.accessibleAt,
     this.virtualHostedStyle,
     this.version,
     this.cname,
@@ -139,6 +139,12 @@ class URLSigner {
   AuthClient _authClient;
   BucketI _bucket;
   FileI? _file;
+
+  AuthClient get authClient => _authClient;
+
+  BucketI get bucket => _bucket;
+
+  FileI? get file => _file;
 
   Future<SignerGetSignedUrlResponse> getSignedUrl(SignerGetSignedUrlConfig cfg) async {
     final int expiresInSeconds = parseExpires(cfg.expires);
@@ -190,17 +196,18 @@ class URLSigner {
     if (cfg.queryParams != null) {
       query.values = cfg.queryParams!.values;
     }
-    // todo - url in dart
-    final String signedUrl = PATH_STYLED_HOST;
-    final String pathname = getResourcePath(config.cname != null, _bucket.name, config.file);
+    final Uri signedUrl = Uri.parse(config.cname ?? PATH_STYLED_HOST).replace(
+      path: getResourcePath(config.cname != null, _bucket.name, config.file),
+      queryParameters: query.values,
+    );
 
     // todo - finish method
 
-    return signedUrl;
+    return signedUrl.toString();
   }
 
   Future<SignedUrlQuery> _getSignedUrlV2(GetSignedUrlConfigInternal config) async {
-    final dynamic canonicalHeadersString = getCanonicalHeaders();
+    final dynamic canonicalHeadersString = getCanonicalHeaders(config.extensionHeaders ?? <String, dynamic>{});
 
     final String resourcePath = getResourcePath(false, config.bucket, config.file);
 
@@ -234,21 +241,74 @@ class URLSigner {
   }
 
   Future<SignedUrlQuery> _getSignedUrlV4(GetSignedUrlConfigInternal config) async {
+    config.accessibleAt = config.accessibleAt ?? DateTime.now();
+
+    const double millisecondsToSeconds = 1.0 / 1000.0;
+    final num expiresPeriodInSeconds =
+        config.expiration - config.accessibleAt!.millisecondsSinceEpoch * millisecondsToSeconds;
+
+    // v4 limit expiration to be 7 days maximum
+    if (expiresPeriodInSeconds > SEVEN_DAYS) {
+      throw Exception('Max allowed expiration is seven days ($SEVEN_DAYS seconds).');
+    }
+
+    // todo - extensionHeaders
+    final Uri fqdn = Uri.parse(config.cname ?? PATH_STYLED_HOST);
+
     // todo - method
     return SignedUrlQuery();
   }
 
-  dynamic getCanonicalHeaders() {
-    // todo - method
+  /// Create canonical headers for signing v4 url.
+  ///
+  /// The canonical headers for v4-signing a request demands header names are
+  /// first lowercased, followed by sorting the header names.
+  /// Then, construct the canonical headers part of the request:
+  ///  <lowercasedHeaderName> + ":" + Trim(<value>) + "\n"
+  ///  ..
+  ///  <lowercasedHeaderName> + ":" + Trim(<value>) + "\n"
+  ///
+  /// @param headers
+  /// @private
+  String getCanonicalHeaders(Map<String, dynamic /* number | string | string[] | undefined */ > headers) {
+    // Sort headers by their lowercased names
+    final List<List<dynamic>> sortedHeaders = headers.entries
+        .map((MapEntry<String, dynamic> entry) => <dynamic>[
+              entry.key.toLowerCase(), // Convert header names to lowercase
+              entry.value
+            ])
+        .toList();
+    sortedHeaders.sort((List<dynamic> a, List<dynamic> b) => a[0].compareTo(b[0]));
+
+    return sortedHeaders.where((List<dynamic> element) {
+      final dynamic value = element[1];
+      return value != null;
+    }).map((List<dynamic> element) {
+      final dynamic headerName = element[0];
+      final dynamic value = element[1];
+      final String canonicalValue =
+          '$value'.trim().replaceAll('[', '').replaceAll(']', '').replaceAll('/\s{1,}/g', ' ');
+      return '$headerName:$canonicalValue\n';
+    }).join('');
   }
 
   String getCanonicalRequest(
-      String method, String path, String query, String headers, String signedHeaders, String? contentSha256) {
+      {required String method,
+      required String path,
+      required String query,
+      required String headers,
+      required String signedHeaders,
+      String? contentSha256}) {
     return <dynamic>[method, path, query, headers, signedHeaders, contentSha256 ?? 'UNSIGNED-PAYLOAD'].join('\n');
   }
 
-  dynamic getCanonicalQueryParams(Query query) {
-    // todo - method
+  String getCanonicalQueryParams(Query query) {
+    // todo - finish method
+    final List<List<String>> list = query.values.entries
+        .map((MapEntry<String, dynamic> entry) => <String>[encodeURI(entry.key, true), encodeURI(entry.value, true)])
+        .toList();
+    list.sort((List<String> a, List<String> b) => a[0].compareTo(b[0]));
+    return list.map((List<String> entry) => '${entry[0]}=${entry[1]}').join('&');
   }
 
   String getResourcePath(bool cname, String bucket, String? file) {
@@ -262,25 +322,43 @@ class URLSigner {
   }
 
   int parseExpires(dynamic expires /* string | number | Date */, {DateTime? current}) {
-    current ??= DateTime.now();
-    final int expiresInMSeconds = expires.microsecondsSinceEpoch;
-    if (expiresInMSeconds.isNaN) {
-      throw Exception('The expiration date provided was invalid.');
+    current = current ?? DateTime.now();
+
+    if (expires.runtimeType == String) {
+      try {
+        expires = DateTime.parse(expires);
+      } catch (e) {
+        throw 'The expiration date provided was invalid.';
+      }
+    } else if (expires.runtimeType == int) {
+      expires = DateTime(0).add(Duration(seconds: expires));
+    } else if (expires.runtimeType != DateTime) {
+      throw 'The expiration date provided was invalid.';
     }
-    if (expiresInMSeconds < current.microsecondsSinceEpoch) {
-      throw Exception('An expiration date cannot be in the past.');
+
+    if (expires.isBefore(current)) {
+      throw 'An expiration date cannot be in the past.';
     }
-    return (expiresInMSeconds / 1000).floor(); // The API expects seconds.
+
+    return (expires.millisecondsSinceEpoch / 1000).floor(); // The API expects seconds.
   }
 
   int parseAccessibleAt(dynamic accessibleAt /* string | number | Date */) {
-    final DateTime currentDateTime = DateTime.now();
-    final int accessibleAtInMSeconds =
-        accessibleAt == null ? accessibleAt.microsecondsSinceEpoch : currentDateTime.microsecondsSinceEpoch;
-    if (accessibleAtInMSeconds.isNaN) {
-      throw Exception('The accessible at date provided was invalid.');
+    accessibleAt = accessibleAt == null ? accessibleAt : DateTime(0);
+
+    if (accessibleAt.runtimeType == String) {
+      try {
+        accessibleAt = DateTime.parse(accessibleAt);
+      } catch (e) {
+        throw 'The accessible at date provided was invalid.';
+      }
+    } else if (accessibleAt.runtimeType == int) {
+      accessibleAt = DateTime(0).add(Duration(seconds: accessibleAt));
+    } else if (accessibleAt.runtimeType != DateTime) {
+      throw 'The accessible at date provided was invalid.';
     }
-    return (accessibleAtInMSeconds / 1000).floor(); // The API expects seconds.
+
+    return (accessibleAt.millisecondsSinceEpoch / 1000).floor(); // The API expects seconds.
   }
 }
 

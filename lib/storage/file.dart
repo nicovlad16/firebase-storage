@@ -386,8 +386,6 @@ class RequestError extends Error {
   List<Error>? errors;
 }
 
-const int SEVEN_DAYS = 7 * 24 * 60 * 60;
-
 //todo - finish class
 class File extends ServiceObject {
   File(this.bucket, this.name, FileOptions options) {
@@ -405,6 +403,16 @@ class File extends ServiceObject {
         requestQueryObject['generation'] = generation;
       }
     }
+
+    /*
+    final client = HttpClient();
+    final HttpClientRequest item = await client.open('GET', 'google.com', 80, '/');
+    item.headers['sas'] = 'sasa';
+    item.headers['content-type'] = 'text/plain;utf-8';
+    item.add(utf8.encode('sasa'));
+    final HttpClientResponse response = await item.close();
+    response.listen((List<int> event) {});
+    */
 
     kmsKeyName = options.kmsKeyName;
 
