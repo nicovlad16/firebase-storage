@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 String fixedEncodeURIComponent(String str) {
   return Uri.encodeComponent(str);
 }
@@ -16,4 +18,13 @@ String encodeURI(String uri, bool encodeSlash) {
       .split('/') //
       .map<String>(fixedEncodeURIComponent) //
       .join(encodeSlash ? '%2F' : '/');
+}
+
+/// Serialize an object to a URL query string using util.encodeURI(uri, true).
+/// @param {string} url The object to serialize.
+/// @return {string} Serialized string.
+String qsStringify(Map<String, dynamic> query) {
+  final jsonEncoder = JsonEncoder();
+  final jsonString = jsonEncoder.convert(query);
+  return encodeURI(jsonString, true);
 }

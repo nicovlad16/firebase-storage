@@ -1,4 +1,9 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:firebase_storage/storage/util.dart';
+import 'package:firebase_storage/util/util.dart';
+import 'package:meta/meta.dart';
 
 class GetCredentialsResponse {
   GetCredentialsResponse({this.client_email});
@@ -35,44 +40,63 @@ class Query {
   Map<String, dynamic> values;
 }
 
-class GetSignedUrlConfigInternal {
-  GetSignedUrlConfigInternal(
-      {required this.expiration,
-      this.accessibleAt,
-      required this.method,
-      this.extensionHeaders,
-      this.queryParams,
-      this.cname,
-      this.contentMd5,
-      this.contentType,
-      required this.bucket,
-      this.file});
+class GetSignedUrlConfigInternal extends SignerGetSignedUrlConfig {
+  GetSignedUrlConfigInternal({
+    required int expiration,
+    dynamic accessibleAt,
+    required String method,
+    Map<String, dynamic>? extensionHeaders,
+    Query? queryParams,
+    String? cname,
+    String? contentMd5,
+    String? contentType,
+    required this.bucket,
+    String? file,
+    SignerGetSignedUrlConfig? config,
+  })  : method = method,
+        expiration = expiration,
+        super(method: method, expires: expiration) {
+    if (config != null) {
+      this
+        ..expires = config.expires
+        ..accessibleAt = config.accessibleAt
+        ..virtualHostedStyle = config.virtualHostedStyle
+        ..version = config.version
+        ..cname = config.cname
+        ..extensionHeaders = config.extensionHeaders
+        ..queryParams = config.queryParams
+        ..contentMd5 = config.contentMd5
+        ..contentType = config.contentType;
+    }
 
-  int expiration;
-  DateTime? accessibleAt;
+    this
+      ..method = method
+      ..accessibleAt = accessibleAt ?? DateTime.now()
+      ..extensionHeaders = extensionHeaders
+      ..queryParams = queryParams
+      ..cname = cname
+      ..contentMd5 = contentMd5
+      ..contentType = contentType
+      ..file = file;
+  }
+
   String method;
-  Map<String, dynamic>? extensionHeaders;
-  Query? queryParams;
-  String? cname;
-  String? contentMd5;
-  String? contentType;
+  int expiration;
   String bucket;
   String? file;
 }
 
 class SignedUrlQuery {
+  SignedUrlQuery({this.generation}) : values = <String, dynamic>{};
+
   int? generation;
+  Map<String, dynamic> values;
+
 // todo - 'response-content-type'?: string;
 // todo - 'response-content-disposition'?: string;
 }
 
-class V2SignedUrlQuery extends SignedUrlQuery {
-  V2SignedUrlQuery({required this.GoogleAccessId, required this.Expires, required this.Signature});
-
-  String GoogleAccessId;
-  int Expires;
-  String Signature;
-}
+class V2SignedUrlQuery extends SignedUrlQuery {}
 
 class V4SignedUrlQuery extends V4UrlQuery {
 // todo 'X-Goog-Signature': string;
@@ -93,12 +117,18 @@ class SignerGetSignedUrlConfig {
     required this.expires,
     this.accessibleAt,
     this.virtualHostedStyle,
-    this.version,
+    this.version = DEFAULT_SIGNING_VERSION,
     this.cname,
+    this.extensionHeaders,
     this.queryParams,
     this.contentMd5,
     this.contentType,
-  });
+  })  : assert(version == 'v2' || version == 'v4'),
+        assert(<String>['GET', 'PUT', 'DELETE', 'POST'].contains(method)),
+        assert(expires is String || expires is int || expires is DateTime) {
+    accessibleAt ??= DateTime.now();
+    assert(accessibleAt is String || accessibleAt is int || accessibleAt is DateTime);
+  }
 
   String method; // 'GET' | 'PUT' | 'DELETE' | 'POST';
   dynamic expires; // string | number | Date;
@@ -106,8 +136,7 @@ class SignerGetSignedUrlConfig {
   bool? virtualHostedStyle;
   String? version; // 'v2' | 'v4';
   String? cname;
-
-//todo - extensionHeaders?: http.OutgoingHttpHeaders;
+  Map<String, dynamic>? extensionHeaders;
   Query? queryParams;
   String? contentMd5;
   String? contentType;
@@ -136,9 +165,9 @@ const String PATH_STYLED_HOST = 'https://storage.googleapis.com';
 class URLSigner {
   URLSigner(this._authClient, this._bucket, this._file);
 
-  AuthClient _authClient;
-  BucketI _bucket;
-  FileI? _file;
+  final AuthClient _authClient;
+  final BucketI _bucket;
+  final FileI? _file;
 
   AuthClient get authClient => _authClient;
 
@@ -146,7 +175,7 @@ class URLSigner {
 
   FileI? get file => _file;
 
-  Future<SignerGetSignedUrlResponse> getSignedUrl(SignerGetSignedUrlConfig cfg) async {
+  Future<String> getSignedUrl(SignerGetSignedUrlConfig cfg) async {
     final int expiresInSeconds = parseExpires(cfg.expires);
     final String method = cfg.method;
     final int accessibleAtInSeconds = parseAccessibleAt(cfg.accessibleAt);
@@ -165,40 +194,35 @@ class URLSigner {
       customHost = 'https://${_bucket.name}.storage.googleapis.com';
     }
 
-    const int secondsToMilliseconds = 1000;
-
     final GetSignedUrlConfigInternal config = GetSignedUrlConfigInternal(
       expiration: expiresInSeconds,
       method: method,
       bucket: _bucket.name,
-      accessibleAt: null,
-      // todo - add value
       file: _file != null ? encodeURI(_file!.name, false) : null,
+      config: cfg,
     );
 
     if (customHost != null) {
       config.cname = customHost;
     }
 
-    final String version = cfg.version ?? DEFAULT_SIGNING_VERSION;
+    V2SignedUrlQuery? v2signedUrlQuery;
+    V4SignedUrlQuery? v4signedUrlQuery;
 
-    SignedUrlQuery signedUrlQuery;
-
-    if (version == 'v2') {
-      signedUrlQuery = await _getSignedUrlV2(config);
-    } else if (version == 'v4') {
-      signedUrlQuery = await _getSignedUrlV4(config);
+    if (cfg.version == DEFAULT_SIGNING_VERSION) {
+      v2signedUrlQuery = await getSignedUrlV2(config);
     } else {
-      throw Exception('Invalid signed URL version: $version. Supported versions are \'v2\' and \'v4\'.');
+      v4signedUrlQuery = await getSignedUrlV4(config);
     }
 
-    final Query query = Query();
+    final dynamic signedUrlQuery = v2signedUrlQuery ?? v4signedUrlQuery;
+
     if (cfg.queryParams != null) {
-      query.values = cfg.queryParams!.values;
+      signedUrlQuery.values.addAll(cfg.queryParams!.values);
     }
     final Uri signedUrl = Uri.parse(config.cname ?? PATH_STYLED_HOST).replace(
       path: getResourcePath(config.cname != null, _bucket.name, config.file),
-      queryParameters: query.values,
+      queryParameters: signedUrlQuery.values,
     );
 
     // todo - finish method
@@ -206,7 +230,8 @@ class URLSigner {
     return signedUrl.toString();
   }
 
-  Future<SignedUrlQuery> _getSignedUrlV2(GetSignedUrlConfigInternal config) async {
+  @visibleForTesting
+  Future<V2SignedUrlQuery> getSignedUrlV2(GetSignedUrlConfigInternal config) async {
     final dynamic canonicalHeadersString = getCanonicalHeaders(config.extensionHeaders ?? <String, dynamic>{});
 
     final String resourcePath = getResourcePath(false, config.bucket, config.file);
@@ -225,38 +250,111 @@ class URLSigner {
         final String signature = await authClient.sign(blobToSign);
         final GetCredentialsResponse credentials = await authClient.getCredentials();
 
-        return V2SignedUrlQuery(
-          GoogleAccessId: credentials.client_email!,
-          Expires: config.expiration,
-          Signature: signature,
-        );
+        final V2SignedUrlQuery query = V2SignedUrlQuery();
+        query.values = <String, dynamic>{
+          'GoogleAccessId': credentials.client_email!,
+          'Expires': config.expiration,
+          'Signature': signature,
+        };
+        return query;
       } catch (err, stackTrace) {
         final SigningError signingErr = SigningError(err.toString(), stackTrace);
         throw signingErr;
       }
     };
 
-    // todo - finish method
     return sign();
   }
 
-  Future<SignedUrlQuery> _getSignedUrlV4(GetSignedUrlConfigInternal config) async {
-    config.accessibleAt = config.accessibleAt ?? DateTime.now();
-
-    const double millisecondsToSeconds = 1.0 / 1000.0;
-    final num expiresPeriodInSeconds =
-        config.expiration - config.accessibleAt!.millisecondsSinceEpoch * millisecondsToSeconds;
-
+  @visibleForTesting
+  Future<V4SignedUrlQuery> getSignedUrlV4(GetSignedUrlConfigInternal config) async {
+    final int accessibleAtinSeconds = parseAccessibleAt(config.accessibleAt);
     // v4 limit expiration to be 7 days maximum
-    if (expiresPeriodInSeconds > SEVEN_DAYS) {
-      throw Exception('Max allowed expiration is seven days ($SEVEN_DAYS seconds).');
+    if (config.expiration - accessibleAtinSeconds > SEVEN_DAYS) {
+      throw 'Max allowed expiration is seven days ($SEVEN_DAYS seconds).';
     }
 
-    // todo - extensionHeaders
+    final Map<String, dynamic> extensionHeaders = config.extensionHeaders ?? <String, dynamic>{};
     final Uri fqdn = Uri.parse(config.cname ?? PATH_STYLED_HOST);
+    extensionHeaders['host'] = fqdn.host;
+    if (config.contentMd5 != null) {
+      extensionHeaders['content-md5'] = config.contentMd5;
+    }
+    if (config.contentType != null) {
+      extensionHeaders['content-type'] = config.contentType;
+    }
 
-    // todo - method
-    return SignedUrlQuery();
+    String? contentSha256;
+    final String? sha256Header = extensionHeaders['x-goog-content-sha256'];
+    if (sha256Header != null) {
+      if (sha256Header is! String
+          // todo - regex || '!/[A-Fa-f0-9]{40}/'.test(sha256Header)
+          ) {
+        throw Exception('The header X-Goog-Content-SHA256 must be a hexadecimal string.');
+      }
+      contentSha256 = sha256Header;
+    }
+
+    final List<String> signedHeadersList = extensionHeaders.keys.map((e) => e.toLowerCase()).toList();
+    signedHeadersList.sort();
+    final String signedHeaders = signedHeadersList.join(';');
+
+    final String extensionHeadersString = getCanonicalHeaders(extensionHeaders);
+
+    final String datestamp = formatDate(config.accessibleAt, 'yyyyMMdd', utc: true);
+    final String credentialScope = '$datestamp/auto/storage/goog4_request';
+
+    final Future<V4SignedUrlQuery> Function() sign = () async {
+      final GetCredentialsResponse credentials = await _authClient.getCredentials();
+      final String credential = '${credentials.client_email}/$credentialScope';
+      // todo - format date with TZ
+      final String dateISO = formatDate(config.accessibleAt, 'yyyyMMddhhmmss', utc: true);
+      final Query queryParams = Query();
+      queryParams.values.addAll(config.queryParams != null ? config.queryParams!.values : <String, dynamic>{});
+      queryParams.values.addAll(<String, dynamic>{
+        'X-Goog-Algorithm': 'GOOG4-RSA-SHA256',
+        'X-Goog-Credential': credential,
+        'X-Goog-Date': dateISO,
+        'X-Goog-Expires': config.expiration.toString(),
+        'X-Goog-SignedHeaders': signedHeaders,
+      });
+
+      final String canonicalQueryParams = getCanonicalQueryParams(queryParams);
+
+      final String canonicalRequest = getCanonicalRequest(
+        method: config.method,
+        path: getResourcePath(config.cname == null, config.bucket, config.file),
+        query: canonicalQueryParams,
+        headers: extensionHeadersString,
+        signedHeaders: signedHeaders,
+        contentSha256: contentSha256,
+      );
+
+      final String hash = sha256.convert(utf8.encode(canonicalRequest)).toString();
+
+      final String blobToSign = <String>[
+        'GOOG4-RSA-SHA256',
+        dateISO,
+        credentialScope,
+        hash,
+      ].join('\n');
+
+      try {
+        final String signature = await authClient.sign(blobToSign);
+        final String signatureHex = base64.encode(utf8.encode(signature));
+        final V4SignedUrlQuery signedQuery = V4SignedUrlQuery();
+        signedQuery.values.addAll(queryParams.values);
+        signedQuery.values.addAll(<String, dynamic>{
+          'X-Goog-Signature': signatureHex,
+        });
+        return signedQuery;
+      } catch (err) {
+        throw SigningError(err.toString());
+      }
+    };
+
+    // todo - finish method
+    return sign();
   }
 
   /// Create canonical headers for signing v4 url.
@@ -270,6 +368,7 @@ class URLSigner {
   ///
   /// @param headers
   /// @private
+  @visibleForTesting
   String getCanonicalHeaders(Map<String, dynamic /* number | string | string[] | undefined */ > headers) {
     // Sort headers by their lowercased names
     final List<List<dynamic>> sortedHeaders = headers.entries
@@ -299,7 +398,14 @@ class URLSigner {
       required String headers,
       required String signedHeaders,
       String? contentSha256}) {
-    return <dynamic>[method, path, query, headers, signedHeaders, contentSha256 ?? 'UNSIGNED-PAYLOAD'].join('\n');
+    return <dynamic>[
+      method,
+      path,
+      query,
+      headers,
+      signedHeaders,
+      contentSha256 ?? 'UNSIGNED-PAYLOAD',
+    ].join('\n');
   }
 
   String getCanonicalQueryParams(Query query) {
@@ -319,46 +425,6 @@ class URLSigner {
     } else {
       return '/$bucket';
     }
-  }
-
-  int parseExpires(dynamic expires /* string | number | Date */, {DateTime? current}) {
-    current = current ?? DateTime.now();
-
-    if (expires.runtimeType == String) {
-      try {
-        expires = DateTime.parse(expires);
-      } catch (e) {
-        throw 'The expiration date provided was invalid.';
-      }
-    } else if (expires.runtimeType == int) {
-      expires = DateTime(0).add(Duration(seconds: expires));
-    } else if (expires.runtimeType != DateTime) {
-      throw 'The expiration date provided was invalid.';
-    }
-
-    if (expires.isBefore(current)) {
-      throw 'An expiration date cannot be in the past.';
-    }
-
-    return (expires.millisecondsSinceEpoch / 1000).floor(); // The API expects seconds.
-  }
-
-  int parseAccessibleAt(dynamic accessibleAt /* string | number | Date */) {
-    accessibleAt = accessibleAt == null ? accessibleAt : DateTime(0);
-
-    if (accessibleAt.runtimeType == String) {
-      try {
-        accessibleAt = DateTime.parse(accessibleAt);
-      } catch (e) {
-        throw 'The accessible at date provided was invalid.';
-      }
-    } else if (accessibleAt.runtimeType == int) {
-      accessibleAt = DateTime(0).add(Duration(seconds: accessibleAt));
-    } else if (accessibleAt.runtimeType != DateTime) {
-      throw 'The accessible at date provided was invalid.';
-    }
-
-    return (accessibleAt.millisecondsSinceEpoch / 1000).floor(); // The API expects seconds.
   }
 }
 

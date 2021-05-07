@@ -1,6 +1,12 @@
+import 'dart:convert';
+
 import 'package:firebase_storage/storage/index.dart';
 import 'package:firebase_storage/storage/util.dart';
+import 'package:firebase_storage/util/util.dart';
+import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
+
+import 'mocks/signer.dart';
 
 void main() {
   const String BUCKET_NAME = 'bucket-name';
@@ -14,8 +20,6 @@ void main() {
     );
     final BucketI bucket = BucketI(BUCKET_NAME);
     final FileI file = FileI(FILE_NAME);
-
-    DateTime NOW = DateTime.parse('2019-03-18T00:00:00Z');
 
     group('URLSigner constructor', () {
       late URLSigner signer;
@@ -38,28 +42,179 @@ void main() {
     });
 
     group('getSignedUrl', () {
-      late URLSigner signer;
-      SignerGetSignedUrlConfig CONFIG;
+      final URLSigner signer = URLSigner(authClient, bucket, file);
+      final URLSignerFake signerFake = URLSignerFake(authClient, bucket, file);
+      const String method = 'GET';
+      late SignerGetSignedUrlConfig config;
+      late GetSignedUrlConfigInternal configInternal;
 
       setUp(() {
-        signer = URLSigner(authClient, bucket, file);
-        CONFIG = SignerGetSignedUrlConfig(
-          method: 'GET',
-          expires: NOW,
+        config = SignerGetSignedUrlConfig(
+          method: method,
+          expires: DateTime.now().add(const Duration(days: 2)),
         );
 
-        group('version', () {
-          test('should default to v2 if version is not given', () async {
-            // todo - find a way to use mock
-            //    const v2;
-            // // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            //     .stub<any, any>(signer, 'getSignedUrlV2')
-            //     .resolves({});
+        configInternal = GetSignedUrlConfigInternal(
+          expiration: parseExpires(config.expires),
+          method: method,
+          bucket: bucket.name,
+          config: config,
+        );
+      });
 
-            await signer.getSignedUrl(CONFIG);
-            // assert(v2.calledOnce);
-          });
+      group('version', () {
+        test('should use v2 if set', () async {
+          config
+            ..version = 'v2'
+            ..contentMd5 = 'md5'
+            ..contentType = 'application/json'
+            ..extensionHeaders = <String, dynamic>{'key': 'value'};
+          // todo - check this
+          // var signedUrl = await signer.getSignedUrl(config);
+          // expect(signedUrl.bucket, bucket.name);
+          // expect(v2arg.method, config.method);
+          // expect(v2arg.contentMd5, config.contentMd5);
+          // expect(v2arg.contentType, config.contentType);
+          // expect(v2arg.extensionHeaders, config.extensionHeaders);
         });
+      });
+
+      test('v2: should generate URL with given cname', () async {
+        config.version = 'v2';
+        config.cname = 'https://www.example.com';
+        final String signedUrl = await signer.getSignedUrl(config);
+        expect(signedUrl, startsWith('https://www.example.com/${file.name}'));
+      });
+
+      test('v4: should generate URL with given cname', () async {
+        config.version = 'v4';
+        config.cname = 'https://www.example.com';
+        final String signedUrl = await signer.getSignedUrl(config);
+        expect(signedUrl, startsWith('https://www.example.com/${file.name}'));
+      });
+
+      test('v2: should remove trailing slashes from cname', () async {
+        config.version = 'v2';
+        config.cname = 'https://www.example.com//';
+        final String signedUrl = await signer.getSignedUrl(config);
+        expect(signedUrl, startsWith('https://www.example.com/${file.name}'));
+      });
+
+      test('v4: should remove trailing slashes from cname', () async {
+        config.version = 'v4';
+        config.cname = 'https://www.example.com//';
+        final String signedUrl = await signer.getSignedUrl(config);
+        expect(signedUrl, startsWith('https://www.example.com/${file.name}'));
+      });
+
+      test('v2: should generate virtual hosted style URL', () async {
+        config.version = 'v2';
+        config.virtualHostedStyle = true;
+        final String signedUrl = await signer.getSignedUrl(config);
+        expect(signedUrl, startsWith('https://${bucket.name}.storage.googleapis.com/${file.name}'));
+      });
+
+      test('v4: should generate virtual hosted style URL', () async {
+        config.version = 'v4';
+        config.virtualHostedStyle = true;
+        final String signedUrl = await signer.getSignedUrl(config);
+        expect(signedUrl, startsWith('https://${bucket.name}.storage.googleapis.com/${file.name}'));
+      });
+
+      test('v2: should generate path styled URL', () async {
+        config.version = 'v2';
+        config.virtualHostedStyle = false;
+        final String signedUrl = await signer.getSignedUrl(config);
+        expect(signedUrl, startsWith(PATH_STYLED_HOST));
+      });
+
+      test('v4: should generate path styled URL', () async {
+        config.version = 'v4';
+        config.virtualHostedStyle = false;
+        final String signedUrl = await signer.getSignedUrl(config);
+        expect(signedUrl, startsWith(PATH_STYLED_HOST));
+      });
+
+      test('should generate URL with returned query params appended', () async {
+        final Map<String, dynamic> values = <String, dynamic>{
+          'X-Goog-Foo': 'value',
+          'X-Goog-Bar': 'azAZ!*()*%',
+        };
+        final V2SignedUrlQuery query = V2SignedUrlQuery();
+        query.values = values;
+        when(signerFake.getSignedUrlV2(configInternal)).thenAnswer((_) async => query);
+        // sandbox
+        // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        //     .stub<any, any>(signer, 'getSignedUrlV2')
+        //     .resolves(query);
+
+        // todo - finish test - find a way to mock things while using real class methods
+        final String signedUrl = await signerFake.getSignedUrl(config);
+        expect(signedUrl, stringContainsInOrder(<String>[qsStringify(values)]));
+      });
+    });
+
+    group('getSignedUrlV2', () {
+      final URLSigner signer = URLSigner(authClient, bucket, file);
+      late GetSignedUrlConfigInternal configInternal;
+      const String method = 'GET';
+
+      setUp(() {
+        configInternal = GetSignedUrlConfigInternal(
+            expiration: DateTime.now().add(const Duration(seconds: 2)).millisecondsSinceEpoch ~/ 1000,
+            method: method,
+            bucket: bucket.name,
+            file: file.name);
+      });
+
+      test('should return v2 query', () async {
+        final V2SignedUrlQuery query = await signer.getSignedUrlV2(configInternal);
+
+        final Map<String, dynamic> expected = <String, dynamic>{
+          'GoogleAccessId': CLIENT_EMAIL,
+          'Expires': configInternal.expiration,
+          'Signature': 'signature',
+        };
+        expect(query.values, expected);
+      });
+    });
+
+    group('getSignedUrlV4', () {
+      final URLSigner signer = URLSigner(authClient, bucket, file);
+      late GetSignedUrlConfigInternal config;
+      const String method = 'GET';
+
+      setUp(() {
+        config = GetSignedUrlConfigInternal(
+          expiration: DateTime.now().add(const Duration(seconds: 2)).millisecondsSinceEpoch ~/ 1000,
+          method: method,
+          bucket: bucket.name,
+        );
+      });
+
+      test('should fail for expirations beyond 7 days', () {
+        config.expiration =
+            DateTime.now().add(const Duration(seconds: 8 * 24 * 60 * 60)).millisecondsSinceEpoch ~/ 1000;
+        const int SEVEN_DAYS = 7 * 24 * 60 * 60;
+
+        expect(
+            () => signer.getSignedUrlV4(config),
+            throwsA(isA<String>().having(
+              (String message) => message,
+              'message',
+              'Max allowed expiration is seven days ($SEVEN_DAYS seconds).',
+            )));
+      });
+
+      test('should returns query params with signature', () async {
+        config.queryParams = Query();
+        config.queryParams!.values = <String, dynamic>{
+          'foo': 'bar',
+        };
+
+        final V4SignedUrlQuery query = await signer.getSignedUrlV4(config);
+        final String signatureInHex = base64.encode(utf8.encode('signature'));
+        expect(query.values['X-Goog-Signature'], signatureInHex);
       });
     });
 
@@ -199,11 +354,9 @@ void main() {
     });
 
     group('parseExpires', () {
-      final URLSigner signer = URLSigner(authClient, bucket, file);
-
       test('throws invalid date', () {
         expect(
-          () => signer.parseExpires('2019-31-'),
+          () => parseExpires('2019-31-'),
           throwsA(
             isA<String>()
                 .having((String exception) => exception, 'message', 'The expiration date provided was invalid.'),
@@ -212,8 +365,9 @@ void main() {
       });
 
       test('throws if expiration is in the past', () {
+        final DateTime dateTime = DateTime.now();
         expect(
-          () => signer.parseExpires(NOW.subtract(const Duration(seconds: 1)), current: NOW),
+          () => parseExpires(dateTime.subtract(const Duration(seconds: 1)), current: dateTime),
           throwsA(
             isA<String>()
                 .having((String exception) => exception, 'message', 'An expiration date cannot be in the past.'),
@@ -222,8 +376,8 @@ void main() {
       });
 
       test('returns expiration date in seconds', () {
-        final DateTime now = DateTime.now().add(const Duration(seconds: 1));
-        final int expires = signer.parseExpires(now);
+        final DateTime now = DateTime.now().add(const Duration(seconds: 2));
+        final int expires = parseExpires(now);
         expect(expires, (now.millisecondsSinceEpoch / 1000).floor());
       });
     });
