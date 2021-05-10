@@ -14,6 +14,7 @@ class Storage implements storage.Storage {
 
     if (credential is ServiceAccountCredential) {}
     // todo - finish constructor
+    storageClient = storage.Storage();
   }
 
   /// @param name Optional name of the bucket to be retrieved. If name is not specified,
@@ -36,8 +37,7 @@ class Storage implements storage.Storage {
   }
 
   final FirebaseApp _appInternal;
-
-// storage.Storage storageClient;
+  late storage.Storage storageClient;
 
   /// @return The app associated with this Storage instance.
   FirebaseApp get app {
