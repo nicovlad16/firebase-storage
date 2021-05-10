@@ -91,25 +91,13 @@ class SignedUrlQuery {
 
   int? generation;
   Map<String, dynamic> values;
-
-// todo - 'response-content-type'?: string;
-// todo - 'response-content-disposition'?: string;
 }
 
 class V2SignedUrlQuery extends SignedUrlQuery {}
 
-class V4SignedUrlQuery extends V4UrlQuery {
-// todo 'X-Goog-Signature': string;
-}
+class V4SignedUrlQuery extends V4UrlQuery {}
 
-class V4UrlQuery extends SignedUrlQuery {
-  // todo
-// 'X-Goog-Algorithm': string;
-// 'X-Goog-Credential': string;
-// 'X-Goog-Date': string;
-// 'X-Goog-Expires': number;
-// 'X-Goog-SignedHeaders': string;
-}
+class V4UrlQuery extends SignedUrlQuery {}
 
 class SignerGetSignedUrlConfig {
   SignerGetSignedUrlConfig({
@@ -163,7 +151,11 @@ const String PATH_STYLED_HOST = 'https://storage.googleapis.com';
 
 // todo - finish class
 class URLSigner {
-  URLSigner(this._authClient, this._bucket, this._file);
+  URLSigner(
+    this._authClient,
+    this._bucket,
+    this._file,
+  );
 
   final AuthClient _authClient;
   final BucketI _bucket;
@@ -253,7 +245,7 @@ class URLSigner {
         final V2SignedUrlQuery query = V2SignedUrlQuery();
         query.values = <String, dynamic>{
           'GoogleAccessId': credentials.client_email!,
-          'Expires': config.expiration,
+          'Expires': config.expiration.toString(),
           'Signature': signature,
         };
         return query;
@@ -287,9 +279,7 @@ class URLSigner {
     String? contentSha256;
     final String? sha256Header = extensionHeaders['x-goog-content-sha256'];
     if (sha256Header != null) {
-      if (sha256Header is! String
-          // todo - regex || '!/[A-Fa-f0-9]{40}/'.test(sha256Header)
-          ) {
+      if (sha256Header is! String || RegExp(r'^[A-Fa-f0-9]{40}$').hasMatch(sha256Header)) {
         throw Exception('The header X-Goog-Content-SHA256 must be a hexadecimal string.');
       }
       contentSha256 = sha256Header;
@@ -384,9 +374,11 @@ class URLSigner {
       return value != null;
     }).map((List<dynamic> element) {
       final dynamic headerName = element[0];
-      final dynamic value = element[1];
-      final String canonicalValue =
-          '$value'.trim().replaceAll('[', '').replaceAll(']', '').replaceAll('/\s{1,}/g', ' ');
+      dynamic value = element[1];
+      if (value is List<dynamic>) {
+        value = value.join(',').replaceRange(value.length - 1, value.length - 1, '');
+      }
+      final String canonicalValue = '$value'.trim().replaceAll(RegExp(r'\s\b|\b\s'), '').replaceAll('\t', ' ');
       return '$headerName:$canonicalValue\n';
     }).join('');
   }

@@ -3,31 +3,35 @@ import 'dart:convert';
 import 'package:firebase_storage/storage/index.dart';
 import 'package:firebase_storage/storage/util.dart';
 import 'package:firebase_storage/util/util.dart';
-import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:test/test.dart';
 
-import 'mocks/signer.dart';
-
+@GenerateMocks(<Type>[URLSigner])
 void main() {
   const String BUCKET_NAME = 'bucket-name';
   const String FILE_NAME = 'file-name.png';
   const String CLIENT_EMAIL = 'client-email';
 
-  group('URLSigner', () {
-    final AuthClient authClient = AuthClient(
+  AuthClient authClient = AuthClient(
+    sign: (_) async => 'signature',
+    getCredentials: () async => GetCredentialsResponse(client_email: CLIENT_EMAIL),
+  );
+  BucketI bucket = BucketI(BUCKET_NAME);
+  FileI file = FileI(FILE_NAME);
+  URLSigner signer = URLSigner(authClient, bucket, file);
+
+  setUp(() {
+    authClient = AuthClient(
       sign: (_) async => 'signature',
       getCredentials: () async => GetCredentialsResponse(client_email: CLIENT_EMAIL),
     );
-    final BucketI bucket = BucketI(BUCKET_NAME);
-    final FileI file = FileI(FILE_NAME);
+    bucket = BucketI(BUCKET_NAME);
+    file = FileI(FILE_NAME);
+    signer = URLSigner(authClient, bucket, file);
+  });
 
+  group('URLSigner', () {
     group('URLSigner constructor', () {
-      late URLSigner signer;
-
-      setUp(() {
-        signer = URLSigner(authClient, bucket, file);
-      });
-
       test('should localize authClient', () {
         expect(signer.authClient, authClient);
       });
@@ -42,23 +46,13 @@ void main() {
     });
 
     group('getSignedUrl', () {
-      final URLSigner signer = URLSigner(authClient, bucket, file);
-      final URLSignerFake signerFake = URLSignerFake(authClient, bucket, file);
       const String method = 'GET';
       late SignerGetSignedUrlConfig config;
-      late GetSignedUrlConfigInternal configInternal;
 
       setUp(() {
         config = SignerGetSignedUrlConfig(
           method: method,
           expires: DateTime.now().add(const Duration(days: 2)),
-        );
-
-        configInternal = GetSignedUrlConfigInternal(
-          expiration: parseExpires(config.expires),
-          method: method,
-          bucket: bucket.name,
-          config: config,
         );
       });
 
@@ -69,93 +63,115 @@ void main() {
             ..contentMd5 = 'md5'
             ..contentType = 'application/json'
             ..extensionHeaders = <String, dynamic>{'key': 'value'};
-          // todo - check this
-          // var signedUrl = await signer.getSignedUrl(config);
-          // expect(signedUrl.bucket, bucket.name);
-          // expect(v2arg.method, config.method);
-          // expect(v2arg.contentMd5, config.contentMd5);
-          // expect(v2arg.contentType, config.contentType);
-          // expect(v2arg.extensionHeaders, config.extensionHeaders);
+          // todo - test
         });
       });
 
-      test('v2: should generate URL with given cname', () async {
-        config.version = 'v2';
-        config.cname = 'https://www.example.com';
-        final String signedUrl = await signer.getSignedUrl(config);
-        expect(signedUrl, startsWith('https://www.example.com/${file.name}'));
+      group('should URI encode file name with special characters', () {
+        test('v2', () async {
+          file.name = "special/azAZ!*'()*%/file.jpg";
+          final String encoded = encodeURI(file.name, false);
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, stringContainsInOrder(<String>[encoded]));
+        });
+
+        test('v4', () async {
+          file.name = "special/azAZ!*'()*%/file.jpg";
+          final String encoded = encodeURI(file.name, false);
+          config.version = 'v4';
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, stringContainsInOrder(<String>[encoded]));
+        });
       });
 
-      test('v4: should generate URL with given cname', () async {
-        config.version = 'v4';
-        config.cname = 'https://www.example.com';
-        final String signedUrl = await signer.getSignedUrl(config);
-        expect(signedUrl, startsWith('https://www.example.com/${file.name}'));
+      group('should generate URL with given cname', () {
+        const String cname = 'https://www.example.com';
+
+        test('v2', () async {
+          config.cname = cname;
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, startsWith('$cname/$FILE_NAME'));
+        });
+
+        test('v4', () async {
+          config.cname = cname;
+          config.version = 'v4';
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, startsWith('$cname/$FILE_NAME'));
+        });
       });
 
-      test('v2: should remove trailing slashes from cname', () async {
-        config.version = 'v2';
-        config.cname = 'https://www.example.com//';
-        final String signedUrl = await signer.getSignedUrl(config);
-        expect(signedUrl, startsWith('https://www.example.com/${file.name}'));
+      group('should remove trailing slashes from cname', () {
+        const String cname = 'https://www.example.com//';
+
+        test('v2: ', () async {
+          config.cname = cname;
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, startsWith('https://www.example.com/${file.name}'));
+        });
+
+        test('v4', () async {
+          config.cname = cname;
+          config.version = 'v4';
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, startsWith('https://www.example.com/${file.name}'));
+        });
       });
 
-      test('v4: should remove trailing slashes from cname', () async {
-        config.version = 'v4';
-        config.cname = 'https://www.example.com//';
-        final String signedUrl = await signer.getSignedUrl(config);
-        expect(signedUrl, startsWith('https://www.example.com/${file.name}'));
+      group('should generate virtual hosted style URL', () {
+        test('v2', () async {
+          config.virtualHostedStyle = true;
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, startsWith('https://${bucket.name}.storage.googleapis.com/${file.name}'));
+        });
+
+        test('v4', () async {
+          config.version = 'v4';
+          config.virtualHostedStyle = true;
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, startsWith('https://${bucket.name}.storage.googleapis.com/${file.name}'));
+        });
       });
 
-      test('v2: should generate virtual hosted style URL', () async {
-        config.version = 'v2';
-        config.virtualHostedStyle = true;
-        final String signedUrl = await signer.getSignedUrl(config);
-        expect(signedUrl, startsWith('https://${bucket.name}.storage.googleapis.com/${file.name}'));
+      group('should generate path styled URL', () {
+        test('v2', () async {
+          config.virtualHostedStyle = false;
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, startsWith(PATH_STYLED_HOST));
+        });
+
+        test('v4', () async {
+          config.version = 'v4';
+          config.virtualHostedStyle = false;
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, startsWith(PATH_STYLED_HOST));
+        });
       });
 
-      test('v4: should generate virtual hosted style URL', () async {
-        config.version = 'v4';
-        config.virtualHostedStyle = true;
-        final String signedUrl = await signer.getSignedUrl(config);
-        expect(signedUrl, startsWith('https://${bucket.name}.storage.googleapis.com/${file.name}'));
-      });
-
-      test('v2: should generate path styled URL', () async {
-        config.version = 'v2';
-        config.virtualHostedStyle = false;
-        final String signedUrl = await signer.getSignedUrl(config);
-        expect(signedUrl, startsWith(PATH_STYLED_HOST));
-      });
-
-      test('v4: should generate path styled URL', () async {
-        config.version = 'v4';
-        config.virtualHostedStyle = false;
-        final String signedUrl = await signer.getSignedUrl(config);
-        expect(signedUrl, startsWith(PATH_STYLED_HOST));
-      });
-
-      test('should generate URL with returned query params appended', () async {
+      group('should generate URL with user-provided queryParams appended', () {
         final Map<String, dynamic> values = <String, dynamic>{
           'X-Goog-Foo': 'value',
           'X-Goog-Bar': 'azAZ!*()*%',
         };
-        final V2SignedUrlQuery query = V2SignedUrlQuery();
-        query.values = values;
-        when(signerFake.getSignedUrlV2(configInternal)).thenAnswer((_) async => query);
-        // sandbox
-        // // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        //     .stub<any, any>(signer, 'getSignedUrlV2')
-        //     .resolves(query);
 
-        // todo - finish test - find a way to mock things while using real class methods
-        final String signedUrl = await signerFake.getSignedUrl(config);
-        expect(signedUrl, stringContainsInOrder(<String>[qsStringify(values)]));
+        test('v2', () async {
+          config.queryParams = Query();
+          config.queryParams!.values = values;
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, stringContainsInOrder(<String>[qsStringify(values)]));
+        });
+
+        test('v4', () async {
+          config.version = 'v4';
+          config.queryParams = Query();
+          config.queryParams!.values = values;
+          final String signedUrl = await signer.getSignedUrl(config);
+          expect(signedUrl, stringContainsInOrder(<String>[qsStringify(values)]));
+        });
       });
     });
 
     group('getSignedUrlV2', () {
-      final URLSigner signer = URLSigner(authClient, bucket, file);
       late GetSignedUrlConfigInternal configInternal;
       const String method = 'GET';
 
@@ -172,7 +188,7 @@ void main() {
 
         final Map<String, dynamic> expected = <String, dynamic>{
           'GoogleAccessId': CLIENT_EMAIL,
-          'Expires': configInternal.expiration,
+          'Expires': configInternal.expiration.toString(),
           'Signature': 'signature',
         };
         expect(query.values, expected);
@@ -180,7 +196,6 @@ void main() {
     });
 
     group('getSignedUrlV4', () {
-      final URLSigner signer = URLSigner(authClient, bucket, file);
       late GetSignedUrlConfigInternal config;
       const String method = 'GET';
 
@@ -219,8 +234,6 @@ void main() {
     });
 
     group('getCanonicalHeaders', () {
-      final URLSigner signer = URLSigner(authClient, bucket, file);
-
       test('should accept multi-valued header as an array', () {
         final Map<String, dynamic> headers = <String, dynamic>{
           'foo': <String>['bar', 'pub'],
@@ -261,7 +274,6 @@ void main() {
     });
 
     group('getCanonicalRequest', () {
-      final URLSigner signer = URLSigner(authClient, bucket, file);
       const String method = 'DELETE';
       const String path = 'path';
       const String query = 'query';
@@ -298,8 +310,6 @@ void main() {
     });
 
     group('getCanonicalQueryParams', () {
-      final URLSigner signer = URLSigner(authClient, bucket, file);
-
       test('should encode key', () {
         const String key = 'AZ!*()*%/f';
         final Query query = Query();
@@ -335,8 +345,6 @@ void main() {
     });
 
     group('getResourcePath', () {
-      final URLSigner signer = URLSigner(authClient, bucket, file);
-
       test('should not include bucket with cname', () {
         final String path = signer.getResourcePath(true, bucket.name, file.name);
         expect(path, '/${file.name}');
