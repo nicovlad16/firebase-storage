@@ -17,7 +17,10 @@ class ParsedHttpRespMessage {
 
 // todo - extends r.CoreOptions
 // todo - add fields
-abstract class DecorateRequestOptions {}
+class DecorateRequestOptions {
+  DecorateRequestOptions() : qs = <String, dynamic>{};
+  Map<String, dynamic> qs;
+}
 
 typedef BodyResponseCallback = void Function(
   dynamic err, // Error | ApiError | null

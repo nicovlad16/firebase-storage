@@ -413,7 +413,15 @@ class Bucket extends ServiceObject {
 // Function getFilesStream;
 // URLSigner signer;
 
-// String getId() {
-//   return '';
-// }
+  String getId() {
+    return id!;
+  }
+
+  @override
+  Future<util.RequestResponse> request(DecorateRequestOptions reqOpts, BodyResponseCallback? callback) async {
+    if (userProject != null && (reqOpts.qs['userProject'] == null)) {
+      reqOpts.qs['userProject'] = userProject;
+    }
+    return super.request(reqOpts, callback!);
+  }
 }

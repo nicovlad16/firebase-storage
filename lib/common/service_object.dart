@@ -120,4 +120,14 @@ typedef SetMetadataOptions = Map<String, dynamic>;
 /// object requires specific behavior.
 // todo - finish class
 // todo - find EventEmitter equivalent in dart
-class ServiceObject {}
+class ServiceObject {
+  String? id;
+
+  Future<util.RequestResponse> request(DecorateRequestOptions reqOpts, BodyResponseCallback? callback) async {
+    return _request_(reqOpts, callback!);
+  }
+
+  Future<util.RequestResponse> _request_(DecorateRequestOptions reqOpts, BodyResponseCallback? callback) async {
+    return <dynamic>[];
+  }
+}

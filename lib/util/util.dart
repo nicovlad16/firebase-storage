@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import '../common/index.dart';
 import '../storage/hmacKey.dart';
 
+typedef RequestResponse = List<dynamic>; // [Metadata, r.Response]
+
 typedef RequestCallback = void Function(DecorateRequestOptions reqOpts, BodyResponseCallback callback);
 
 typedef OnUploadProgressCallback = void Function(dynamic progressEvent);
