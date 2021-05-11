@@ -1,5 +1,4 @@
 import '../common/index.dart';
-import '../util/util.dart' as util;
 import 'bucket.dart';
 
 class GetPolicyOptions {
@@ -72,8 +71,8 @@ class Iam {
   }
 
   final Bucket bucket;
-  final util.RequestCallback _request_;
-  String _resourceId_;
+  // final util.RequestCallback _request_;
+  late String _resourceId_;
 
   /// @typedef {object} GetPolicyOptions Requested options for IAM#getPolicy().
   /// @property {number} [requestedPolicyVersion] The version of IAM policies to
@@ -172,7 +171,7 @@ class Iam {
       if (options.requestedPolicyVersion != null) {
         qs.optionsRequestedPolicyVersion = options.requestedPolicyVersion;
       }
-      bucket.request(, callback! );
+      // todo -  bucket.request();
     }
 
     return <dynamic>[];

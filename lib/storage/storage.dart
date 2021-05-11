@@ -1,3 +1,5 @@
+import 'package:firebase_storage/storage/channel.dart';
+
 import '../common/index.dart';
 import 'bucket.dart';
 import 'hmacKey.dart';
@@ -187,4 +189,17 @@ typedef GetHmacKeysResponse = List<List<HmacKey>>;
 const String PROTOCOL_REGEX = '/^(\w*):\/\//';
 
 // todo - finish class
-class Storage extends Service {}
+class Storage extends Service {
+  Storage(ServiceConfig config, ServiceOptions options) : super(config, options);
+
+  static late Bucket bucket;
+  static late Channel channel;
+  // static late File file;
+  static late HmacKey hmacKey;
+
+  // static Acl acl = Acl(<String, dynamic>{
+  //   'OWNER_ROLE': 'OWNER',
+  //   'READER_ROLE': 'READER',
+  //   'WRITER_ROLE': 'WRITER',
+  // });
+}
