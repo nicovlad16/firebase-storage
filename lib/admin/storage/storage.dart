@@ -1,9 +1,9 @@
 // import 'package:firebase_storage/admin/app/firebase_app.dart';
 // import 'package:firebase_storage/admin/auth/credential-internal.dart';
-// import 'package:firebase_storage/admin/auth/index.dart';
+// import 'package:firebase_storage/admin/auth/index_test.dart';
 // import 'package:firebase_storage/admin/utils/error.dart';
-// import 'package:firebase_storage/admin/utils/index.dart' as utils;
-// import 'package:firebase_storage/storage/bucket.dart';
+// import 'package:firebase_storage/admin/utils/index_test.dart' as utils;
+// import 'package:firebase_storage/storage/bucket_test.dart';
 //
 // import '../../storage/storage.dart' as storage;
 //

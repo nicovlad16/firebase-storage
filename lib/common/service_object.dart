@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:http/http.dart';
 
-import '../util/util.dart' as util;
 import 'index.dart';
 
 typedef RequestResponse = List<dynamic>; // [Metadata, r.Response];
@@ -11,18 +10,14 @@ typedef GetRequestInterceptorsCallback = List<Function> Function();
 
 typedef RequestStreamCallback = Request Function(DecorateRequestOptions reqOpts);
 
-class ServiceObjectParent {
-  ServiceObjectParent({
-    List<Interceptor>? interceptors,
-    required this.getRequestInterceptors,
-    required this.requestStream,
-    required this.request,
-  }) : interceptors = interceptors ?? <Interceptor>[];
+abstract class ServiceObjectParent {
+  abstract List<Interceptor> interceptors;
 
-  late List<Interceptor> interceptors;
-  GetRequestInterceptorsCallback getRequestInterceptors;
-  RequestStreamCallback requestStream;
-  util.RequestCallback request;
+  List<Function> getRequestInterceptors();
+
+  HttpClientRequest requestStream(DecorateRequestOptions reqOpts);
+
+  void request(DecorateRequestOptions reqOpts, BodyResponseCallback callback);
 }
 
 class Interceptor {
@@ -122,7 +117,7 @@ typedef SetMetadataOptions = Map<String, dynamic>;
 /// object requires specific behavior.
 // todo - finish class
 // todo - find EventEmitter equivalent in dart
-class ServiceObject {
+class ServiceObject implements ServiceObjectParent {
   ServiceObject(ServiceObjectConfig config) {
     metadata = <String, dynamic>{};
     baseUrl = config.baseUrl;
@@ -144,6 +139,12 @@ class ServiceObject {
   Function? createMethod;
   late Methods _methods;
   late List<Interceptor> interceptors;
+
+  @override
+  List<Function> getRequestInterceptors() {
+    // TODO: implement getRequestInterceptors
+    throw UnimplementedError();
+  }
 
   /// Make an authenticated API request.
   ///

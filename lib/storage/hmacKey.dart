@@ -49,9 +49,23 @@ typedef HmacKeyMetadataResponse = List<dynamic>; // [HmacKeyMetadata, Metadata]
 
 // todo - finish class
 class HmacKey extends ServiceObject {
-  HmacKey(Storage storage, String accessId, HmacKeyOptions? options) {
+  HmacKey(Storage storage, String accessId, [HmacKeyOptions? options])
+      : super(ServiceObjectConfig(
+          parent: storage,
+          baseUrl: '/projects/${HmacKey.getProjectId(options, storage)}/hmacKeys',
+          id: accessId,
+        )) {
     // todo - finish constructor
   }
 
-  HmacKeyMetadata? metadata;
+  static String? getProjectId(HmacKeyOptions? options, Storage storage) {
+    if (options != null) {
+      if (options.projectId != null) {
+        return options.projectId;
+      }
+    }
+    return storage.projectId;
+  }
+
+// HmacKeyMetadata? metadata;
 }

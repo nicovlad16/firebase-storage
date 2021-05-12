@@ -68,8 +68,9 @@ class ServiceOptions extends GoogleAuthOptions {
 /// @param {string[]} config.scopes - The scopes required for the request.
 /// @param {object=} options - [Configuration object](#/docs).
 // todo - finish class
-class Service {
-  Service(ServiceConfig config, ServiceOptions options) {
+class Service implements ServiceObjectParent {
+  Service(ServiceConfig config, [ServiceOptions? options]) {
+    options ??= ServiceOptions();
     baseUrl = config.baseUrl;
     _apiEndpoint = config.apiEndpoint;
     timeout = options.timeout;
@@ -94,7 +95,7 @@ class Service {
     //   ..email = options.email
     //   ..token = options.token;
 
-    // todo - finish costructor
+    // todo - finish constructor
   }
 
   late String baseUrl;
@@ -111,6 +112,16 @@ class Service {
   late GoogleAuth authClient;
   int? timeout;
 
+  List<Interceptor> get globalInterceptors => _globalInterceptors;
+
+  String get apiEndpoint => _apiEndpoint;
+
+  @override
+  List<Function> getRequestInterceptors() {
+    // todo: implement getRequestInterceptors
+    throw UnimplementedError();
+  }
+
   /// Make an authenticated API request.
   ///
   /// @private
@@ -118,7 +129,7 @@ class Service {
   /// @param {object} reqOpts - Request options that are passed to `request`.
   /// @param {string} reqOpts.uri - A URI relative to the baseUrl.
   /// @param {function} callback - The callback function passed to `request`.
-  HttpClientRequest? _request_({
+  HttpClientRequest? _request({
     dynamic /* StreamRequestOptions | DecorateRequestOptions */ reqOpts,
     BodyResponseCallback? callback,
   }) {
@@ -143,16 +154,18 @@ class Service {
   /// @param {object} reqOpts - Request options that are passed to `request`.
   /// @param {string} reqOpts.uri - A URI relative to the baseUrl.
   /// @param {function} callback - The callback function passed to `request`.
+  @override
   void request(DecorateRequestOptions reqOpts, BodyResponseCallback callback) {
-    _request_(reqOpts: reqOpts, callback: callback);
+    _request(reqOpts: reqOpts, callback: callback);
   }
 
   /// Make an authenticated API request.
   ///
   /// @param {object} reqOpts - Request options that are passed to `request`.
   /// @param {string} reqOpts.uri - A URI relative to the baseUrl.
+  @override
   HttpClientRequest requestStream(DecorateRequestOptions reqOpts) {
     reqOpts.shouldReturnStream = true;
-    return _request_(reqOpts: reqOpts)!;
+    return _request(reqOpts: reqOpts)!;
   }
 }

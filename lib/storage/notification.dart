@@ -35,5 +35,10 @@ typedef DeleteNotificationCallback = void Function(Exception? err, Metadata? api
 
 // todo - finish class
 class Notification extends ServiceObject {
-  Notification(Bucket bucket, String id) {}
+  Notification(Bucket bucket, String id)
+      : super(ServiceObjectConfig(
+          parent: bucket,
+          baseUrl: '/notificationConfigs',
+          id: id.toString(),
+        ));
 }

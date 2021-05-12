@@ -30,7 +30,9 @@ class MetadataOptions {
 }
 
 class BucketOptions {
-  BucketOptions([this.userProject]);
+  BucketOptions({this.kmsKeyName, this.userProject});
+
+  String? kmsKeyName;
 
   String? userProject;
 }
@@ -378,27 +380,22 @@ const int _RESUMABLE_THRESHOLD = 5000000;
 
 // todo - finish class
 class Bucket extends ServiceObject {
-  Bucket(this.storage, String name, BucketOptions? options) {
+  Bucket(this.storage, String name, [BucketOptions? options])
+      :
+        // Allow for "gs://"-style input, and strip any trailing slashes.
+        name = name.replaceAll(RegExp('^gs://'), '').replaceAll(RegExp('/\+\$'), ''),
+        super(ServiceObjectConfig(baseUrl: '/b', id: name, parent: storage)) {
     // todo - options
 
-    // Allow for "gs://"-style input, and strip any trailing slashes.
-    name = name.replaceAll('/^gs:\/\//', '').replaceAll('/\/+\$/', '');
-
-    final Map<dynamic, dynamic> requestQueryObject = <String, dynamic>{};
-
-    userProject = options!.userProject;
-    if (userProject.runtimeType == String) {
-      requestQueryObject['userProject'] = userProject;
+    if (options != null) {
+      userProject = options.userProject;
     }
 
-    this.storage = storage;
-    this.name = name;
-    this.userProject = userProject;
-
-    var config = ServiceObjectConfig(baseUrl: '/b', id: name, parent: ServiceObjectParent());
+    final AclOptions aclOptions = AclOptions('/acl');
+    acl = Acl(aclOptions);
+    iam = Iam(this);
 
     // todo - finish constructor
-    // super(config);
   }
 
   Metadata metadata;
@@ -419,20 +416,20 @@ class Bucket extends ServiceObject {
   /// A user project to apply to each request from this bucket.
   /// @name Bucket#userProject
   /// @type {string}
-  String? userProject;
+  late String? userProject;
 
-  Acl acl;
-  Iam iam;
+  late Acl acl;
+  late Iam iam;
 
-  Function getFilesStream;
-  URLSigner signer;
+  late Function getFilesStream;
+  late URLSigner signer;
 
   String getId() {
     return id!;
   }
 
   @override
-  Future<util.RequestResponse> request(DecorateRequestOptions reqOpts, BodyResponseCallback? callback) async {
+  Future<void> request(DecorateRequestOptions reqOpts, BodyResponseCallback? callback) async {
     if (userProject != null && (reqOpts.qs['userProject'] == null)) {
       reqOpts.qs['userProject'] = userProject;
     }

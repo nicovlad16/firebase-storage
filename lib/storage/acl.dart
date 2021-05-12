@@ -2,10 +2,10 @@ import '../common/index.dart';
 import '../util/util.dart' as util;
 
 class AclOptions {
-  AclOptions(this.pathPrefix, this.request);
+  AclOptions(this.pathPrefix);
 
   String pathPrefix;
-  util.RequestCallback request;
+  // util.RequestCallback request;
 }
 
 typedef GetAclResponse = List<dynamic>; // [AccessControlObject | AccessControlObject[], Metadata]
@@ -140,7 +140,7 @@ class Acl extends AclRoleAccessorMethods {
   Acl(AclOptions options) {
     // todo - call super
     pathPrefix = options.pathPrefix;
-    request_ = options.request;
+    // request_ = options.request;
   }
 
   late String pathPrefix;

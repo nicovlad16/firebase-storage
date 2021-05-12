@@ -1,5 +1,8 @@
 import 'dart:typed_data';
 
+import 'package:firebase_storage/storage/storage.dart';
+import 'package:firebase_storage/storage/util.dart';
+
 import '../common/index.dart';
 import '../util/util.dart' as util;
 import 'acl.dart';
@@ -388,8 +391,16 @@ class RequestError extends Error {
 
 //todo - finish class
 class File extends ServiceObject {
-  File(this.bucket, this.name, FileOptions options) {
+  File(this.bucket, this.name, [FileOptions? options])
+      : storage = bucket.storage,
+        super(ServiceObjectConfig(
+          parent: bucket,
+          baseUrl: '/o',
+          id: fixedEncodeURIComponent(name),
+        )) {
     // todo - finish constructor
+    options = options ?? FileOptions();
+
     final Map<dynamic, dynamic> requestQueryObject = <dynamic, dynamic>{};
     int? generation;
 
@@ -425,7 +436,7 @@ class File extends ServiceObject {
 
   Bucket bucket;
 
-  // Storage storage;
+  Storage storage;
   String? kmsKeyName;
   String? userProject;
 

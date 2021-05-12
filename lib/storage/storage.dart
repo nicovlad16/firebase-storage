@@ -44,14 +44,6 @@ class StorageOptions extends ServiceOptions {
   String? apiEndpoint;
 }
 
-class BucketOptions {
-  BucketOptions({this.kmsKeyName, this.userProject});
-
-  String? kmsKeyName;
-
-  String? userProject;
-}
-
 class Cors {
   Cors({this.maxAgeSeconds, this.method, this.origin, this.responseHeader});
 

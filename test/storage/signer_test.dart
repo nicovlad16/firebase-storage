@@ -8,29 +8,29 @@ import 'package:test/test.dart';
 
 @GenerateMocks(<Type>[URLSigner])
 void main() {
-  const String BUCKET_NAME = 'bucket-name';
-  const String FILE_NAME = 'file-name.png';
-  const String CLIENT_EMAIL = 'client-email';
+  group('URLSigner', () {
+    const String BUCKET_NAME = 'bucket-name';
+    const String FILE_NAME = 'file-name.png';
+    const String CLIENT_EMAIL = 'client-email';
 
-  AuthClient authClient = AuthClient(
-    sign: (_) async => 'signature',
-    getCredentials: () async => GetCredentialsResponse(client_email: CLIENT_EMAIL),
-  );
-  BucketI bucket = BucketI(BUCKET_NAME);
-  FileI file = FileI(FILE_NAME);
-  URLSigner signer = URLSigner(authClient, bucket, file);
-
-  setUp(() {
-    authClient = AuthClient(
+    AuthClient authClient = AuthClient(
       sign: (_) async => 'signature',
       getCredentials: () async => GetCredentialsResponse(client_email: CLIENT_EMAIL),
     );
-    bucket = BucketI(BUCKET_NAME);
-    file = FileI(FILE_NAME);
-    signer = URLSigner(authClient, bucket, file);
-  });
+    BucketI bucket = BucketI(BUCKET_NAME);
+    FileI file = FileI(FILE_NAME);
+    URLSigner signer = URLSigner(authClient, bucket, file);
 
-  group('URLSigner', () {
+    setUp(() {
+      authClient = AuthClient(
+        sign: (_) async => 'signature',
+        getCredentials: () async => GetCredentialsResponse(client_email: CLIENT_EMAIL),
+      );
+      bucket = BucketI(BUCKET_NAME);
+      file = FileI(FILE_NAME);
+      signer = URLSigner(authClient, bucket, file);
+    });
+
     group('URLSigner constructor', () {
       test('should localize authClient', () {
         expect(signer.authClient, authClient);
