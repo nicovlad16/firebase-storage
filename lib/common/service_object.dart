@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:http/http.dart';
 
 import '../util/util.dart' as util;
@@ -11,13 +13,13 @@ typedef RequestStreamCallback = Request Function(DecorateRequestOptions reqOpts)
 
 class ServiceObjectParent {
   ServiceObjectParent({
-    required this.interceptors,
+    List<Interceptor>? interceptors,
     required this.getRequestInterceptors,
     required this.requestStream,
     required this.request,
-  });
+  }) : interceptors = interceptors ?? <Interceptor>[];
 
-  List<Interceptor> interceptors;
+  late List<Interceptor> interceptors;
   GetRequestInterceptorsCallback getRequestInterceptors;
   RequestStreamCallback requestStream;
   util.RequestCallback request;
@@ -121,13 +123,65 @@ typedef SetMetadataOptions = Map<String, dynamic>;
 // todo - finish class
 // todo - find EventEmitter equivalent in dart
 class ServiceObject {
-  String? id;
+  ServiceObject(ServiceObjectConfig config) {
+    metadata = <String, dynamic>{};
+    baseUrl = config.baseUrl;
+    parent = config.parent; // Parent class.
+    id = config.id; // Name or ID (e.g. dataset ID, bucket name, etc).
+    createMethod = config.createMethod;
+    _methods = config.methods ?? Methods();
+    interceptors = <Interceptor>[];
+    pollIntervalMs = config.pollIntervalMs;
 
-  Future<util.RequestResponse> request(DecorateRequestOptions reqOpts, BodyResponseCallback? callback) async {
-    return _request_(reqOpts, callback!);
+    // todo - methods
   }
 
-  Future<util.RequestResponse> _request_(DecorateRequestOptions reqOpts, BodyResponseCallback? callback) async {
-    return <dynamic>[];
+  Metadata metadata;
+  String? baseUrl;
+  late ServiceObjectParent parent;
+  String? id;
+  int? pollIntervalMs;
+  Function? createMethod;
+  late Methods _methods;
+  late List<Interceptor> interceptors;
+
+  /// Make an authenticated API request.
+  ///
+  /// @private
+  ///
+  /// @param {object} reqOpts - Request options that are passed to `request`.
+  /// @param {string} reqOpts.uri - A URI relative to the baseUrl.
+  /// @param {function} callback - The callback function passed to `request`.
+  HttpClientRequest? /* dynamic */ /* HttpClientRequest? | void */ _request_({
+    dynamic /* StreamRequestOptions | DecorateRequestOptions */ reqOpts,
+    BodyResponseCallback? callback,
+  }) {
+    final bool isAbsoluteUrl = reqOpts.uri.indexOf('http') == 0;
+    final List<dynamic> uriComponents = <dynamic>[baseUrl, id ?? '', reqOpts.uri];
+
+    if (isAbsoluteUrl) {
+      // todo splice
+    }
+
+    // todo - finish method
+    // return parent.request(reqOpts, callback!);
+  }
+
+  /// Make an authenticated API request.
+  ///
+  /// @param {object} reqOpts - Request options that are passed to `request`.
+  /// @param {string} reqOpts.uri - A URI relative to the baseUrl.
+  /// @param {function} callback - The callback function passed to `request`.
+  void request(DecorateRequestOptions reqOpts, BodyResponseCallback callback) {
+    _request_(reqOpts: reqOpts, callback: callback);
+  }
+
+  /// Make an authenticated API request.
+  ///
+  /// @param {object} reqOpts - Request options that are passed to `request`.
+  /// @param {string} reqOpts.uri - A URI relative to the baseUrl.
+  HttpClientRequest requestStream(DecorateRequestOptions reqOpts) {
+    reqOpts.shouldReturnStream = true;
+    return _request_(reqOpts: reqOpts)!;
   }
 }

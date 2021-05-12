@@ -144,7 +144,7 @@ class Service {
   /// @param {string} reqOpts.uri - A URI relative to the baseUrl.
   /// @param {function} callback - The callback function passed to `request`.
   void request(DecorateRequestOptions reqOpts, BodyResponseCallback callback) {
-    _request_.call(reqOpts: reqOpts, callback: callback);
+    _request_(reqOpts: reqOpts, callback: callback);
   }
 
   /// Make an authenticated API request.
@@ -153,6 +153,6 @@ class Service {
   /// @param {string} reqOpts.uri - A URI relative to the baseUrl.
   HttpClientRequest requestStream(DecorateRequestOptions reqOpts) {
     reqOpts.shouldReturnStream = true;
-    return _request_.call(reqOpts: reqOpts)!;
+    return _request_(reqOpts: reqOpts)!;
   }
 }

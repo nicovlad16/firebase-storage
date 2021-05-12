@@ -1,3 +1,7 @@
+import 'package:firebase_storage/storage/acl.dart';
+import 'package:firebase_storage/storage/iam.dart';
+import 'package:firebase_storage/storage/storage.dart';
+
 import '../common/index.dart';
 import '../util/util.dart' as util;
 import 'channel.dart';
@@ -374,27 +378,37 @@ const int _RESUMABLE_THRESHOLD = 5000000;
 
 // todo - finish class
 class Bucket extends ServiceObject {
-  // Bucket(Storage storage, String name, BucketOptions? options) {
-  //   // todo - options
-  //
-  //   // Allow for "gs://"-style input, and strip any trailing slashes.
-  //   name = name.replaceAll('/^gs:\/\//', '').replaceAll('/\/+\$/', '');
-  //
-  //   final Map<dynamic, dynamic> requestQueryObject = <dynamic, dynamic>{};
-  //
-  //   userProject = options!.userProject;
-  //   if (userProject.runtimeType == String) {
-  //     requestQueryObject['userProject'] = userProject;
-  //   }
-  //
-  //   this.storage = storage;
-  //   this.name = name;
-  //   this.userProject = userProject;
-  // }
+  Bucket(this.storage, String name, BucketOptions? options) {
+    // todo - options
+
+    // Allow for "gs://"-style input, and strip any trailing slashes.
+    name = name.replaceAll('/^gs:\/\//', '').replaceAll('/\/+\$/', '');
+
+    final Map<dynamic, dynamic> requestQueryObject = <String, dynamic>{};
+
+    userProject = options!.userProject;
+    if (userProject.runtimeType == String) {
+      requestQueryObject['userProject'] = userProject;
+    }
+
+    this.storage = storage;
+    this.name = name;
+    this.userProject = userProject;
+
+    var config = ServiceObjectConfig(baseUrl: '/b', id: name, parent: ServiceObjectParent());
+
+    // todo - finish constructor
+    // super(config);
+  }
 
   Metadata metadata;
+  String name;
 
-  // String name;
+  /// A reference to the {@link Storage} associated with this {@link Bucket}
+  /// instance.
+  /// @name Bucket#storage
+  /// @type {Storage}
+  Storage storage;
 
   /// A reference to the {@link Storage} associated with this {@link Bucket}
   /// instance.
@@ -407,11 +421,11 @@ class Bucket extends ServiceObject {
   /// @type {string}
   String? userProject;
 
-// Acl acl;
-// Iam iam;
-//
-// Function getFilesStream;
-// URLSigner signer;
+  Acl acl;
+  Iam iam;
+
+  Function getFilesStream;
+  URLSigner signer;
 
   String getId() {
     return id!;
