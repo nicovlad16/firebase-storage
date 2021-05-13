@@ -27,14 +27,47 @@ typedef MakeAuthenticatedRequestCallback = dynamic /* void | Deuplexify | Aborta
 );
 
 class MakeAuthenticatedRequest {
-  MakeAuthenticatedRequest(this.requestCallback, this.getCredentials, this.authClient);
+  void init(MakeAuthenticatedRequestFactoryConfig config) {
+    final GoogleAuthOptions googleAutoAuthConfig = GoogleAuthOptions(
+      keyFilename: config.keyFilename,
+      keyFile: config.keyFile,
+      credentials: config.credentials,
+      projectId: config.projectId,
+      authClient: config.authClient,
+    );
+    if (googleAutoAuthConfig.projectId == '{{projectId}}') {
+      googleAutoAuthConfig.projectId = null;
+    }
+    authClient = googleAutoAuthConfig.authClient ?? GoogleAuth(googleAutoAuthConfig);
+  }
 
-  MakeAuthenticatedRequestCallback requestCallback;
-  GetCredentialsCallback getCredentials;
-  GoogleAuth authClient;
+  late GoogleAuth authClient;
+
+  dynamic makeAuthenticatedRequest(
+    DecorateRequestOptions reqOpts, [
+    MakeAuthenticatedRequestOptions? options,
+    BodyResponseCallback? callback,
+  ]) {}
+
+  Future<CredentialBody> getCredentials() {
+    return authClient.getCredentials();
+  }
 }
 
 class MakeAuthenticatedRequestFactoryConfig extends GoogleAuthOptions {
+  MakeAuthenticatedRequestFactoryConfig(
+      {this.autoRetry,
+      this.customEndpoint,
+      this.email,
+      this.maxRetries,
+      this.stream,
+      this.authClient,
+      this.projectIdRequired,
+      this.projectId,
+      this.credentials,
+      this.keyFile,
+      this.token});
+
   /// Automatically retry requests if the response is related to rate limits or
   /// certain intermittent server errors. We will exponentially backoff
   /// subsequent requests by default. (default: true)
@@ -55,6 +88,16 @@ class MakeAuthenticatedRequestFactoryConfig extends GoogleAuthOptions {
   /// A pre-instantiated GoogleAuth client that should be used.
   /// A new will be created if this is not set.
   GoogleAuth? authClient;
+
+  bool? projectIdRequired;
+
+  String? projectId;
+
+  dynamic credentials;
+
+  String? keyFile;
+
+  String? token;
 }
 
 class MakeAuthenticatedRequestOptions {

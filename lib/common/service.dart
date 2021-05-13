@@ -68,7 +68,7 @@ class ServiceOptions extends GoogleAuthOptions {
 /// @param {string[]} config.scopes - The scopes required for the request.
 /// @param {object=} options - [Configuration object](#/docs).
 // todo - finish class
-class Service implements ServiceObjectParent {
+class Service with MakeAuthenticatedRequest implements ServiceObjectParent {
   Service(ServiceConfig config, [ServiceOptions? options]) {
     options ??= ServiceOptions();
     baseUrl = config.baseUrl;
@@ -85,15 +85,16 @@ class Service implements ServiceObjectParent {
     projectIdRequired = config.projectIdRequired != false;
     providedUserAgent = options.userAgent;
 
-    // var reqCfg = config;
-    // reqCfg
-    //   ..projectIdRequired = projectIdRequired
-    //   ..projectId = projectId
-    //   ..authClient = options.authClient
-    //   ..credentials = options.credentials
-    //   ..keyFile = options.keyFilename
-    //   ..email = options.email
-    //   ..token = options.token;
+    final MakeAuthenticatedRequestFactoryConfig reqCfg = MakeAuthenticatedRequestFactoryConfig(
+      projectIdRequired: projectIdRequired,
+      projectId: projectId,
+      authClient: options.authClient,
+      credentials: options.credentials,
+      keyFile: options.keyFilename,
+      email: options.email,
+      token: options.token,
+    );
+    init(reqCfg);
 
     // todo - finish constructor
   }
@@ -105,10 +106,9 @@ class Service implements ServiceObjectParent {
   late String projectId;
   late bool projectIdRequired;
   String? providedUserAgent;
-  late MakeAuthenticatedRequest makeAuthenticatedRequest;
   late Map<String, dynamic> _getCredentials;
   late String _apiEndpoint;
-
+  @override
   late GoogleAuth authClient;
   int? timeout;
 
